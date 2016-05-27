@@ -9,7 +9,7 @@ use std::slice;
 
 /// Container for a property value
 #[derive(Debug, PartialEq, Clone)]
-enum PropertyValue {
+pub enum PropertyValue {
     Pointer (* const libc::c_void),
     Integer (libc::c_int),
     Double (f64), // TODO: double check 
@@ -50,11 +50,9 @@ impl From<* const libc::c_char> for PropertyValue {
 ///
 impl From<PropertyValue> for * const libc::c_char {
     fn from(value: PropertyValue) -> Self {
-        unsafe {
-            match value {
-                PropertyValue::String(val) => val,
-                _ => panic!("wrong type: String"),
-            }
+        match value {
+            PropertyValue::String(val) => val,
+            _ => panic!("wrong type: String"),
         }
     }
 }
@@ -170,6 +168,7 @@ type PropResetType = extern fn(* mut OfxPropertySet, * const libc::c_char) -> Of
 type PropGetDimensionType = extern fn(* mut OfxPropertySet, * const libc::c_char, * mut libc::c_int) -> OfxStatus;
 // ffi
 #[repr(C)]
+#[allow(non_snake_case)]
 pub struct OfxPropertySuiteV1 {
     propSetPointer : PropSetPointerType,
     propSetString: PropSetStringType,
@@ -192,7 +191,7 @@ pub struct OfxPropertySuiteV1 {
 }
 
 /// Generic function to insert a property in a property set
-extern fn propSetFunc<T>(properties:* mut OfxPropertySet, 
+extern fn set_property<T>(properties:* mut OfxPropertySet, 
                          property: * const libc::c_char, 
                          index: libc::c_int, 
                          value: T) -> OfxStatus where PropertyValue: From<T> {
@@ -205,7 +204,7 @@ extern fn propSetFunc<T>(properties:* mut OfxPropertySet,
 }
 
 /// Generic function to insert a vector property in a property set
-extern fn propSetFuncN<T>(properties:* mut OfxPropertySet, 
+extern fn set_property_multiple<T>(properties:* mut OfxPropertySet, 
                           property: * const libc::c_char, 
                           count: libc::c_int, 
                           pointer: * const T) -> OfxStatus 
@@ -223,7 +222,7 @@ extern fn propSetFuncN<T>(properties:* mut OfxPropertySet,
 }
 
 /// Generic function to retrieve a value from a property set
-extern fn propGetFunc<T>(properties: * mut OfxPropertySet,
+extern fn get_property<T>(properties: * mut OfxPropertySet,
                          property: * const libc::c_char,
                          index: libc::c_int,
                          dest: * mut T) -> OfxStatus
@@ -240,7 +239,7 @@ extern fn propGetFunc<T>(properties: * mut OfxPropertySet,
 }
 
 /// Generic function to retrieve a value from a property set
-extern fn propGetFuncN<T>(properties: * mut OfxPropertySet,
+extern fn get_property_multiple<T>(properties: * mut OfxPropertySet,
                          property: * const libc::c_char,
                          count: libc::c_int,
                          dest: * mut T) -> OfxStatus
@@ -256,14 +255,14 @@ extern fn propGetFuncN<T>(properties: * mut OfxPropertySet,
     0 
 }
 
-extern fn propResetFunc(properties: * mut OfxPropertySet,
+extern fn prop_reset_func(properties: * mut OfxPropertySet,
                         property: * const libc::c_char ) -> OfxStatus
 {
     // TODO : find out what this function is supposed to do
     0
 }
 
-extern fn propGetDimensionFunc(properties: * mut OfxPropertySet,
+extern fn prop_get_dimension_func(properties: * mut OfxPropertySet,
                            property: * const libc::c_char, 
                            dim: * mut libc::c_int) -> OfxStatus
 {
@@ -273,28 +272,29 @@ extern fn propGetDimensionFunc(properties: * mut OfxPropertySet,
 
 
 
+#[allow(non_snake_case)]
 impl OfxPropertySuiteV1 {
 
     pub fn new() -> OfxPropertySuiteV1 {
         OfxPropertySuiteV1 {
-            propSetPointer: propSetFunc,
-            propSetString: propSetFunc,
-            propSetDouble: propSetFunc,
-            propSetInt: propSetFunc,
-            propSetPointerN: propSetFuncN,
-            propSetStringN: propSetFuncN,
-            propSetDoubleN: propSetFuncN,
-            propSetIntN: propSetFuncN,
-            propGetPointer: propGetFunc,
-            propGetString: propGetFunc,
-            propGetDouble: propGetFunc,
-            propGetInt: propGetFunc,
-            propGetPointerN: propGetFuncN,
-            propGetStringN: propGetFuncN,
-            propGetDoubleN: propGetFuncN,
-            propGetIntegerN: propGetFuncN,
-            propReset: propResetFunc,
-            propGetDimension: propGetDimensionFunc
+            propSetPointer: set_property,
+            propSetString: set_property,
+            propSetDouble: set_property,
+            propSetInt: set_property,
+            propSetPointerN: set_property_multiple,
+            propSetStringN: set_property_multiple,
+            propSetDoubleN: set_property_multiple,
+            propSetIntN: set_property_multiple,
+            propGetPointer: get_property,
+            propGetString: get_property,
+            propGetDouble: get_property,
+            propGetInt: get_property,
+            propGetPointerN: get_property_multiple,
+            propGetStringN: get_property_multiple,
+            propGetDoubleN: get_property_multiple,
+            propGetIntegerN: get_property_multiple,
+            propReset: prop_reset_func,
+            propGetDimension: prop_get_dimension_func
         }
     }
 }
@@ -305,7 +305,7 @@ impl OfxPropertySuiteV1 {
 // pub type OfxPropertySetHandle = &OfxPropertySet;
 
 #[test]
-fn test_property_set() {
+fn test_set_property() {
     let mut properties = OfxPropertySet::new();
     let key = CString::new("Test").unwrap();
     let value = PropertyValue::Integer(9299);

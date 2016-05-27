@@ -5,11 +5,10 @@ use std::io::Result;
 use std::env;
 
 pub struct Bundle {
-    root: String,
+    path: String,
     nb_plugins: u32,
     //plugin_names: Vec<str>,
 }
-
 
 pub fn get_bundle_paths() -> Vec<PathBuf> {
     let mut paths : Vec<PathBuf> = Vec::new();
@@ -69,7 +68,7 @@ pub fn init_bundles(bundle_paths: Vec<PathBuf>) -> Vec<Bundle> {
                        println!("dir '{:?}' has bundle", path.as_path());
                        //println!("entry '{:?}'", entry.path());
                        // TODO read nb_plugins
-                       bundles.push(Bundle {root: bundle_path(d_entry), nb_plugins: 1}) 
+                       bundles.push(Bundle {path: bundle_path(d_entry), nb_plugins: 1}) 
                     }
                 }
             }
