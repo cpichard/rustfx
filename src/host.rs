@@ -20,27 +20,23 @@ pub fn load_plugin_test() {
     let c_path = CString::new(path).unwrap();
     let c_get_nplugs = CString::new("OfxGetNumberOfPlugins").unwrap();
 
-    //let mut plugin = HashMap::new();
-
     unsafe {
-        let plug = dlopen(c_path.as_ptr(), 1); // RTLD_LAZY 
-        let nb_plugins = dlsym(plug, c_get_nplugs.as_ptr());
+        let plug_dll = dlopen(c_path.as_ptr(), 1); // RTLD_LAZY 
+        let c_nb_plugins_fun = dlsym(plug_dll, c_get_nplugs.as_ptr());
         // Count the number of plugins in the bundle
-        //if nb_plugins != ptr::null_mut() {
-        if !nb_plugins.is_null() {
+        if !c_nb_plugins_fun.is_null() {
             // Should we create an OfxBundle object from here ?
             //plugin.insert(path, plug);
-            let nb_plugins_fun : extern fn () -> c_int = mem::transmute(nb_plugins);
-            print!("Number of plugins in this bundle: {}\n", nb_plugins_fun());
+            let nb_plugins : extern fn () -> c_int = mem::transmute(c_nb_plugins_fun);
+            print!("Number of plugins in this bundle: {}\n", nb_plugins());
 
             // Call get plugin
-            //let get_plugin = "OfxGetPlugin";
-            let c_get_plugin = CString::new("OfxGetPlugin").unwrap();
-            let c_fn_get_plugin = dlsym(plug, c_get_plugin.as_ptr());
-            let fn_get_plugin : extern fn (c_uint) -> *const OfxPlugin 
-                = mem::transmute(c_fn_get_plugin);
+            let c_get_plugin_str = CString::new("OfxGetPlugin").unwrap();
+            let c_get_plugin_fun = dlsym(plug_dll, c_get_plugin_str.as_ptr());
+            let get_plugin : extern fn (c_uint) -> *const OfxPlugin 
+                = mem::transmute(c_get_plugin_fun);
             // TODO iterate on the number of plugins
-            let plug0 = fn_get_plugin(0);
+            let plug0 = get_plugin(0);
             //let plug_api = CStr::from_ptr((*plug0).pluginApi).to_string_lossy();
             //print!("plug api: {}\n", plug_api);
             print!("plug {:?}\n", *plug0);

@@ -4,9 +4,16 @@ use ofx::property::*;
 
 // import everything from libc ?
 use std::mem;
+use std::ffi::CString;
+use libc::c_char;
 
 pub type OfxStatus = i32;
 // OfxCore bindings
+
+/// FIXME: could we store the following string as c_char instead of str ? 
+pub const ofx_get_number_of_plugins : & 'static str = "OfxGetNumberOfPlugins";
+pub const ofx_get_plugin : & 'static str = "OfxGetPlugin";
+
 
 pub type FetchSuiteType = extern fn (* mut OfxPropertySet, * const libc::c_char, libc::c_int)-> * mut libc::c_void;
 
@@ -18,6 +25,7 @@ pub struct OfxHost {
 }
 
 #[allow(non_snake_case)]
+#[allow(unused_variables)]
 extern fn fetchSuiteFunc(host:* mut OfxPropertySet, 
                   suite_name: * const libc::c_char,
                   suite_version: libc::c_int) -> * mut libc::c_void {
