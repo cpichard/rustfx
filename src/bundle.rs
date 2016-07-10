@@ -1,4 +1,5 @@
 use libc::*;
+use std::fmt;
 use ofx::core::*;
 use ofx::plugin::*;
 use std::collections::HashMap;
@@ -13,6 +14,7 @@ use std::str;
 use std::path;
 
 // Structure to store the bundles and the different plugins ?
+#[derive(Debug)]
 pub struct PluginList {
     bundles: Vec<Bundle>,
     plugin_names: HashMap<String, usize>,
@@ -24,6 +26,13 @@ impl PluginList {
         PluginList {bundles: bundle_list, plugin_names: mapping}
     }
     
+    pub fn get(&self, plugin_name: &str) -> Option<&Bundle> {
+        match self.plugin_names.get(plugin_name) {
+            Some(index) => Some(&self.bundles[*index]), // FIXME : this could fail ?
+            None => None,
+        }
+    }
+
     /// Create a mapping between the bundle and the plugins they contain
     fn create_mapping(bundle_list: &Vec<Bundle>) -> HashMap<String, usize> {
         let mut names_bundles_map = HashMap::new();
@@ -37,6 +46,7 @@ impl PluginList {
 }
 
 /// A bundle stores plugins
+#[derive(Debug)]
 pub struct Bundle {
     path: path:: PathBuf,
     nb_plugins: u32, // TODO : double check type

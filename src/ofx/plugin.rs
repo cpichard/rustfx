@@ -33,7 +33,7 @@ pub struct OfxPlugin {
   // backwards compatibility is broken.
   pub pluginVersionMajor: libc::c_uint,
 
-  // Major version of this plug-in, this gets incremented when software 
+  // Minor version of this plug-in, this gets incremented when software 
   // is changed, but does not break backwards compatibility.
   pub pluginVersionMinor: libc::c_uint,
 

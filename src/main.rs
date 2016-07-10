@@ -19,14 +19,14 @@ fn main() {
     // List the available plugins from the bundles
     let plugins = PluginList::from_bundles(bundles);
 
-    // Test
-    //for name in plugins.plugin_names.keys() {
-    //    println!("Plugin: {}", name);
-    //}
+    // Debug
+    //println!("Plugins: {:?}", plugins);
 
     // Start an engine with those plugins
+    //println!("Starting engine");
     let engine = Engine::new(plugins);
-
+    engine.instanciate("Test"); // not found
+    engine.instanciate("tuttle.checkerboard"); // found
     // What would be a simple api for the interaction of engine/host/plugins ?
     // host.instanciate("fr.inria.openfx.ReadPNG")
     //plugins.instanciate("fr.inria.openfx.ReadPNG");
