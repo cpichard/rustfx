@@ -1,57 +1,21 @@
 use libc::*;
-use std::fmt;
 use ofx::core::*;
 use ofx::plugin::*;
-use std::collections::HashMap;
 use std::env;
 use std::ffi::*;
 use std::fs::DirEntry;
 use std::io;
 use std::mem;
 use std::path::PathBuf;
-use std::ptr;
 use std::str;
-use std::path;
-
-// Structure to store the bundles and the different plugins ?
-#[derive(Debug)]
-pub struct PluginList {
-    bundles: Vec<Bundle>,
-    plugin_names: HashMap<String, usize>,
-}
-
-impl PluginList {
-    pub fn from_bundles(bundle_list: Vec<Bundle>) -> PluginList {
-        let mapping = PluginList::create_mapping(&bundle_list);
-        PluginList {bundles: bundle_list, plugin_names: mapping}
-    }
-    
-    pub fn get(&self, plugin_name: &str) -> Option<&Bundle> {
-        match self.plugin_names.get(plugin_name) {
-            Some(index) => Some(&self.bundles[*index]), // FIXME : this could fail ?
-            None => None,
-        }
-    }
-
-    /// Create a mapping between the bundle and the plugins they contain
-    fn create_mapping(bundle_list: &Vec<Bundle>) -> HashMap<String, usize> {
-        let mut names_bundles_map = HashMap::new();
-        for (ind, bundle) in bundle_list.iter().enumerate() {
-            for plugin_name in bundle.plugin_names() {
-                names_bundles_map.insert(plugin_name, ind);
-            }
-        }
-        names_bundles_map
-    }
-}
 
 /// A bundle stores plugins
 #[derive(Debug)]
 pub struct Bundle {
-    path: path:: PathBuf,
-    nb_plugins: u32, // TODO : double check type
+    path: PathBuf,
+    pub nb_plugins: u32, // TODO : double check type
     dll_handle: *mut c_void,
-    get_plugin: extern fn (c_uint) -> *const OfxPlugin,
+    pub get_plugin: extern fn (c_uint) -> *const OfxPlugin,
 }
 
 impl Bundle {
@@ -61,7 +25,7 @@ impl Bundle {
         let bundle_root = dir.unwrap().path();
         let dll_path = Bundle::get_dll_path(&bundle_root);
         unsafe {
-            println!("Loading {:?}", bundle_root);
+            debug!("Loading {:?}", bundle_root);
             // Open the dynamic library
             let plug_dll : *mut c_void = dlopen(dll_path, 1); 
             if plug_dll.is_null() {
@@ -117,34 +81,18 @@ impl Bundle {
         };
         from_str(dll_path.to_str().unwrap())
     }
-
-    fn plugin_names(&self) -> Vec<String> {
-        let mut names = Vec::new();
-        // List plugin names of the bundle
-        for index in 0..(self.nb_plugins) {
-            let plugin = (self.get_plugin)(index);
-            if ! plugin.is_null() {
-                let ptr_wrap = unsafe {CStr::from_ptr((*plugin).pluginIdentifier)};
-                let plug_name = ptr_wrap.to_str().unwrap().to_string();
-                names.push(plug_name);
-            }
-        }
-        names
-    }
-
 }
-
 
 impl Drop for Bundle {
 
     // Close dynamic library if it was opened
     fn drop(&mut self) {
-        println!("Closing dynamic library!");
+        trace!("Closing dynamic library!");
         if ! self.dll_handle.is_null() {
             unsafe {
                 dlclose(self.dll_handle);
             }
-            println!("Closed");
+            trace!("Closed");
         }
     }
 
@@ -222,6 +170,7 @@ pub fn init_bundles(bundle_paths: Vec<PathBuf>) -> Vec<Bundle> {
     bundles
 }
 
+// TODO: this should be used in a lot of places, so move to a common module
 fn from_str(s:& str) -> * const c_char {
     //CStr::from_bytes_with_nul(s.as_bytes()).unwrap().as_ptr()
     CString::new(s).unwrap().as_ptr()

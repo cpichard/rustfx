@@ -1,7 +1,9 @@
 extern crate libc;
+#[macro_use]
+extern crate log;
+extern crate env_logger;
+
 mod ofx;
-use ofx::plugin::*;
-use ofx::core::*;
 
 mod engine;
 use engine::*;
@@ -10,21 +12,22 @@ mod bundle;
 use bundle::*;
 
 fn main() {
+    //
+    env_logger::init().unwrap();
+    trace!("Initializing rustfx");
+
     // Get env OFX and list all the plugins specified in the path
     let bundle_paths = get_bundle_paths();
 
     // This finds all the bundles 
     let bundles = init_bundles(bundle_paths);
 
-    // List the available plugins from the bundles
-    let plugins = PluginList::from_bundles(bundles);
-
-    // Debug
-    //println!("Plugins: {:?}", plugins);
-
     // Start an engine with those plugins
     //println!("Starting engine");
-    let engine = Engine::new(plugins);
+    let mut engine = Engine::new();
+    engine.load_plugins(bundles);
+
+    // Load project, graph of effects
     engine.instanciate("Test"); // not found
     engine.instanciate("tuttle.checkerboard"); // found
     // What would be a simple api for the interaction of engine/host/plugins ?

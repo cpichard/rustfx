@@ -1,9 +1,6 @@
 extern crate libc;
 ///! Module plugin
-
 use ofx::core::*;
-use libc::*;
-use std::mem::*;
 
 pub type OfxPluginEntryPoint = 
      extern fn (*const libc::c_char, *const libc::c_void, *mut libc::c_void, *mut libc::c_void) 
@@ -13,6 +10,7 @@ pub type OfxPluginEntryPoint =
 //
 #[repr(C)]
 #[derive(Debug)]
+#[allow(non_snake_case)]
 pub struct OfxPlugin {
   // Defines the type of the plug-in, this will tell the host what the plug-in 
   // does. e.g.: an image effects plug-in would be a "OfxImageEffectPlugin"

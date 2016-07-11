@@ -4,14 +4,16 @@ use ofx::property::*;
 
 // import everything from libc ?
 use std::mem;
-use std::ffi::CString;
-use libc::c_char;
+//use std::ffi::CString;
+//use libc::c_char;
 
 pub type OfxStatus = i32;
 // OfxCore bindings
 
 /// FIXME: could we store the following string as c_char instead of str ? 
+#[allow(non_upper_case_globals)]
 pub const ofx_get_number_of_plugins : & 'static str = "OfxGetNumberOfPlugins";
+#[allow(non_upper_case_globals)]
 pub const ofx_get_plugin : & 'static str = "OfxGetPlugin";
 
 
