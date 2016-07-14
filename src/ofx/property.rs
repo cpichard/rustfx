@@ -21,7 +21,32 @@ pub enum PropertyValue {
 }
 
 /// Properties are stored in a HashMap for now
-pub type OfxPropertySet = HashMap<CString, PropertyValue>;
+//pub type OfxPropertySet = HashMap<CString, PropertyValue>;
+pub struct OfxPropertySet {
+    props: HashMap<CString, PropertyValue>,
+}
+pub type OfxPropertySetHandle = * mut OfxPropertySet;
+
+impl OfxPropertySet {
+    
+    pub fn new () -> Self {
+        OfxPropertySet {
+            props: HashMap::new()
+        }
+    }
+    
+    pub fn insert<K, T>(& mut self, key: K, value: T) -> Option<PropertyValue> 
+        where PropertyValue: From<T>, K : Into<Vec<u8>>
+    {
+        let key_cstring = CString::new(key).unwrap();
+        self.props.insert(key_cstring, PropertyValue::from(value))
+    } 
+
+    pub fn get(&self, key: &CStr) -> Option<&PropertyValue> {
+        self.props.get(key)
+    }
+}
+
 
 /// Functions to convert to PropertyValues
 impl From<* const libc::c_void> for PropertyValue {
@@ -191,20 +216,24 @@ pub struct OfxPropertySuiteV1 {
 }
 
 /// Generic function to insert a property in a property set
-extern fn set_property<T>(properties:* mut OfxPropertySet, 
+pub extern fn set_property<T>(properties:* mut OfxPropertySet, 
                          property: * const libc::c_char, 
                          index: libc::c_int, 
                          value: T) -> OfxStatus where PropertyValue: From<T> {
     unsafe {
         let key = CStr::from_ptr(property);
-        (*properties).insert(key.to_owned(), PropertyValue::from(value));
+        //(*properties).insert(key.to_owned(), PropertyValue::from(value));
+        match (*properties).insert(key.to_str().unwrap(), value) {
+            Some(prop) => warn!("replacing a previous property"),
+            None => warn!("new property")
+        }
     }
     // TODO : should return if the insert was effective
     return 0;
 }
 
 /// Generic function to insert a vector property in a property set
-extern fn set_property_multiple<T>(properties:* mut OfxPropertySet, 
+pub extern fn set_property_multiple<T>(properties:* mut OfxPropertySet, 
                           property: * const libc::c_char, 
                           count: libc::c_int, 
                           pointer: * const T) -> OfxStatus 
@@ -215,7 +244,8 @@ extern fn set_property_multiple<T>(properties:* mut OfxPropertySet,
         let mut values : Vec<T> = Vec::new();
         values.extend_from_slice(rawparts);
         let key = CStr::from_ptr(property);
-        (*properties).insert(key.to_owned(), PropertyValue::from(values));
+        //(*properties).insert(key.to_owned(), PropertyValue::from(values));
+        (*properties).insert(key.to_str().unwrap(), values);
     }
     // TODO : should return the correct error code 
     return 0;
@@ -228,11 +258,13 @@ extern fn get_property<T>(properties: * mut OfxPropertySet,
                          dest: * mut T) -> OfxStatus
     where PropertyValue: Into<T>, T: Clone 
 {
+    debug!("get_property {:?}", unsafe {CStr::from_ptr(property)});
     unsafe {
-        let key = CStr::from_ptr(property);
-        match (*properties).get(key) {
+        let key_cstr = unsafe{ CStr::from_ptr(property)};
+        let key_cstring = key_cstr.to_owned(); // FIXME this is not efficient
+        match (*properties).get(&key_cstring) {
             Some(prop) => *dest = (*prop).clone().into(),
-            _ => panic!("could not find key"),
+            _ => error!("could not find key {:?}", key_cstring),
         }
     }
     0 
@@ -249,7 +281,7 @@ extern fn get_property_multiple<T>(properties: * mut OfxPropertySet,
         let key = CStr::from_ptr(property);
         match (*properties).get(key) {
             Some(prop) => panic!("not implemented"),
-            _ => panic!("could not find key"),
+            None => panic!("could not find key"),
         }
     }
     0 

@@ -1,5 +1,5 @@
 extern crate libc;
-#[macro_use]
+#[macro_use(warn, trace, debug, error, log)]
 extern crate log;
 extern crate env_logger;
 
@@ -20,7 +20,7 @@ fn main() {
     let bundle_paths = get_bundle_paths();
 
     // This finds all the bundles 
-    let bundles = init_bundles(bundle_paths);
+    let bundles = find_bundles(bundle_paths);
 
     // Start an engine with those plugins
     //println!("Starting engine");
