@@ -1,8 +1,10 @@
 extern crate libc;
+use std::ffi::*;
+
 ///! Module plugin
 use ofx::core::*;
 
-pub type OfxPluginEntryPoint = 
+pub type OfxPluginEntryPointType = 
      extern fn (*const libc::c_char, *const libc::c_void, *mut libc::c_void, *mut libc::c_void) 
         -> OfxStatus;
 //
@@ -39,6 +41,16 @@ pub struct OfxPlugin {
   pub setHost: extern fn (*mut libc::c_void) -> libc::c_void,
 
   // Main entry point for plug-ins
-  pub mainEntry : OfxPluginEntryPoint,
+  pub mainEntry : OfxPluginEntryPointType,
 }
+
+/// accessor functions
+impl OfxPlugin {
+    
+    pub fn identifier(&self) -> String {
+        let ptr_wrap = unsafe {CStr::from_ptr(self.pluginIdentifier)};
+        ptr_wrap.to_str().unwrap().to_string()
+    }    
+}
+
 

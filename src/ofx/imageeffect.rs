@@ -2,21 +2,32 @@ use libc;
 use ofx::property::*;
 use ofx::param::*;
 use ofx::core::*;
-
+use std::mem;
 // This structure is private to the module, the pointer is public
-struct OfxImageEffectStruct {
+pub struct OfxImageEffectStruct {
 // TODO stuff for image effect    
-    
+    props: * mut OfxPropertySet,    
 }
-pub type OfxImageEffectHandle = * mut OfxImageEffectStruct;
+//pub type OfxImageEffectHandle = * mut OfxImageEffectStruct;
+pub type OfxImageEffectHandle = * mut libc::c_void;
 
-struct OfxImageMemoryStruct {
+
+impl OfxImageEffectStruct {
+    
+    pub fn new() -> Self {
+        OfxImageEffectStruct {
+            props: Box::into_raw(OfxPropertySet::new()),
+        }
+    }
+}
+
+pub struct OfxImageMemoryStruct {
    // TODO stuff for image memory 
 }
 pub type OfxImageMemoryHandle = * mut OfxImageMemoryStruct;
 
 
-struct OfxImageClip {
+pub struct OfxImageClip {
 // TODO move ImageClip where it belongs and fill with relevant code
 }
 pub type OfxImageClipHandle = * mut OfxImageClip;
@@ -39,7 +50,18 @@ pub type ImageMemoryFreeType = extern fn (OfxImageMemoryHandle) -> OfxStatus;
 pub type ImageMemoryLockType = extern fn (OfxImageMemoryHandle, * mut * mut libc::c_void) -> OfxStatus;
 pub type ImageMemoryUnlockType = extern fn (OfxImageMemoryHandle) -> OfxStatus;
 
-extern fn get_property_set(handle: OfxImageEffectHandle, props: * mut OfxPropertySetHandle) -> OfxStatus {0}
+// TODO
+extern fn get_property_set(image_effect_ptr: OfxImageEffectHandle, prop_handle: * mut OfxPropertySetHandle) -> OfxStatus {
+    if !image_effect_ptr.is_null() {
+        //use std::ptr;
+        let image_effect : & mut OfxImageEffectStruct = unsafe{mem::transmute(image_effect_ptr)};
+        unsafe {*prop_handle = image_effect.props as * mut libc::c_void};
+        unsafe {trace!("getPropertySet setting props {:?}", *prop_handle as * const _)};
+        kOfxStatOK
+    } else {
+        kOfxStatErrBadHandle
+    }
+}
 extern fn get_param_set(handle: OfxImageEffectHandle, params: * mut OfxParamSetHandle) -> OfxStatus {0}
 extern fn clip_define(handle: OfxImageEffectHandle, name:* const libc::c_char, props: * mut OfxPropertySetHandle ) -> OfxStatus {0}
 extern fn clip_get_handle(handle: OfxImageEffectHandle, 
@@ -79,10 +101,28 @@ pub struct OfxImageEffectSuiteV1 {
 }
 
 
-impl OfxImageEffectSuiteV1 {
-    
-    pub fn new () -> Self {
-        OfxImageEffectSuiteV1 {
+//impl OfxImageEffectSuiteV1 {
+//    
+//    pub fn new () -> Self {
+//        OfxImageEffectSuiteV1 {
+//            getPropertySet: get_property_set,    
+//            getParamSet: get_param_set,
+//            clipDefine: clip_define,
+//            clipGetHandle: clip_get_handle,
+//            clipGetPropertySet: clip_get_property_set,
+//            clipGetImage: clip_get_image,
+//            clipReleaseImage: clip_release_image,
+//            clipGetRegionOfDefinition: clip_get_region_of_definition,
+//            abort: abort,
+//            imageMemoryAlloc: image_memory_alloc,
+//            imageMemoryFree: image_memory_free,
+//            imageMemoryLock: image_memory_lock,
+//            imageMemoryUnlock: image_memory_unlock,
+//        }    
+//    }    
+//}
+
+pub static OFX_IMAGE_EFFECT_SUITE_V1 : OfxImageEffectSuiteV1 = OfxImageEffectSuiteV1 {
             getPropertySet: get_property_set,    
             getParamSet: get_param_set,
             clipDefine: clip_define,
@@ -96,6 +136,4 @@ impl OfxImageEffectSuiteV1 {
             imageMemoryFree: image_memory_free,
             imageMemoryLock: image_memory_lock,
             imageMemoryUnlock: image_memory_unlock,
-        }    
-    }    
-}
+};

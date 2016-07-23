@@ -28,12 +28,7 @@ fn main() {
     engine.load_plugins(bundles);
 
     // Load project, graph of effects
-    engine.instanciate("Test"); // not found
-    engine.instanciate("tuttle.checkerboard"); // found
-    // What would be a simple api for the interaction of engine/host/plugins ?
-    // host.instanciate("fr.inria.openfx.ReadPNG")
-    //plugins.instanciate("fr.inria.openfx.ReadPNG");
-    //let read_plugin = plugins.create_instance(ofxhost, "readexr");
-    //let write_plugin = plugins.create_instance(ofxhost, "writeexr");
+    engine.node("Test"); // not found
+    engine.node("tuttle.checkerboard"); // found
 
 }

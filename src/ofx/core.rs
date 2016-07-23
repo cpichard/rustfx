@@ -1,10 +1,16 @@
 extern crate libc;
-use libc::*;
+//use libc::*;
 use ofx::property::*;
 use ofx::imageeffect::*;
 use std::mem;
 use std::ffi::*;
+
 pub type OfxStatus = i32;
+pub const kOfxStatOK : OfxStatus = 0;
+pub const kOfxStatFailed : OfxStatus = 1;
+pub const kOfxStatErrFatal : OfxStatus =2;
+pub const kOfxStatErrBadHandle : OfxStatus = 9;
+pub const kOfxStatReplyDefault : OfxStatus = 14;
 
 pub type OfxTime = f64;
 
@@ -21,7 +27,7 @@ pub struct OfxRectD {
     x1: f64,    
     y1: f64,    
     x2: f64,    
-    Y2: f64,    
+    y2: f64,    
 }
 
 /// FIXME: could we store the following string as c_char instead of str ? 
@@ -39,9 +45,16 @@ pub struct OfxHost {
   pub fetchSuite: FetchSuiteType,
 }
 
+//impl Drop for OfxHost {
+//    
+//    fn drop( & mut self ) {
+//        println!("Dropping host");    
+//    }    
+//}
 //const kOfxPropertySuite : &'static str = "OfxPropertySuite";
 
 // FIXME : allocate suites only once and return pointers to them
+#[allow(unused_variables)]
 extern fn fetch_suite(host: OfxPropertySetHandle, 
                       suite_name: * const libc::c_char,
                       suite_version: libc::c_int) -> * mut libc::c_void {
@@ -52,41 +65,25 @@ extern fn fetch_suite(host: OfxPropertySetHandle,
     let suite_str = suite_cstr.to_str().unwrap();
     match suite_str {
         "OfxPropertySuite" => {
-            let mut suite = OfxPropertySuiteV1::new();
-            unsafe {mem::transmute(& mut suite)}
+            unsafe {mem::transmute(& OFX_PROPERTY_SUITE_V1)}
         }
         "OfxImageEffectSuite" => {
-            let mut suite = OfxImageEffectSuiteV1::new();
-            unsafe {mem::transmute(& mut suite)}
+            unsafe {mem::transmute(& OFX_IMAGE_EFFECT_SUITE_V1)}
         }
         _ => {
-            panic!("suite {} not implemented", suite_str) 
+            //panic!("suite {} not implemented", suite_str) 
+            unsafe {mem::transmute(& OFX_IMAGE_EFFECT_SUITE_V1)}
         }
     }
 }
-// TODO: this should be used in a lot of places, so move to a common module
-fn from_str(s: & str) -> * const c_char {
-    // TODO: What is the lifetime of the returned pointer ? 
-    CString::new(s).unwrap().as_ptr()
-}
-
 
 impl OfxHost {
-    pub fn new() -> OfxHost {
-        let mut properties = OfxPropertySet::new(); 
-        OfxHost::describeCapabilities(& mut properties);
-        unsafe {
-            let host_ptr : * mut OfxPropertySet = mem::transmute(& mut properties);
-            OfxHost { host: host_ptr, fetchSuite: fetch_suite }
-        }
-    }
-
-    // TODO describe
-    fn describeCapabilities(props : & mut OfxPropertySet) {
-        //props.insert(CString::new("TOTO").unwrap(), PropertyValue::from(10));
-        //set_property(props, from_str("Toto"), 0, 10); 
-        //set_property(props, from_str("Toto1"), 0, from_str("test")); 
-        //props.set("", "");
-        props.insert("TOTO", 10);
+    pub fn new(properties: Box<OfxPropertySet>) -> Box<OfxHost> {
+        //let properties = OfxPropertySet::new();
+        let host_props = Box::into_raw(properties);
+        trace!("properties for host set ptr is {:?}", host_props as * const _);
+        Box::new(OfxHost { host: host_props as * mut libc::c_void, fetchSuite: fetch_suite })
+        //Box::new(OfxHost { host: 0 as * mut libc::c_void, fetchSuite: fetch_suite })
     }
 }
+

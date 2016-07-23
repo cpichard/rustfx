@@ -9,7 +9,6 @@ use std::mem;
 use std::path::PathBuf;
 use std::str;
 use std::ptr;
-use std::fmt;
 
 /// A bundle stores plugins
 #[derive(Debug)]
@@ -17,13 +16,23 @@ pub struct Bundle {
     dll_path: PathBuf,
     dll_handle: *mut c_void,
     pub nb_plugins: u32, // TODO : double check type
-    pub get_plugin: extern fn (c_uint) -> *const OfxPlugin,
+    c_get_plugin: extern fn (c_uint) -> *const OfxPlugin,
 }
 
 impl Bundle {
 
+    // Returns a reference of the plugin returned by the library
+    pub fn get_plugin(&self, nb: c_uint) -> & OfxPlugin {
+        let plugin_ptr = (self.c_get_plugin)(nb);
+        if !plugin_ptr.is_null() {
+            unsafe {mem::transmute(plugin_ptr)}
+        } else {
+            panic!("plugin pointer is null");    
+        }
+    }
+
     /// Create a Bundle from a directory
-    fn init_from_path(dir: io::Result<DirEntry>) -> io::Result<Bundle> {
+    fn create_from_path(dir: io::Result<DirEntry>) -> io::Result<Bundle> {
         let bundle_root = dir.unwrap().path();
         let dll_path = Bundle::get_dll_path(&bundle_root);
         debug!("Loading {:?}", &bundle_root);
@@ -54,15 +63,13 @@ impl Bundle {
                 let custom_error = io::Error::new(io::ErrorKind::Other, error_message);
                 return Err(custom_error)
             }
-            let get_plugin_fun 
-                : extern fn (c_uint) -> *const OfxPlugin 
-                    = mem::transmute(c_get_plugin_fun);
+
             // Everything went fine, so we return a new bundle
-            return Ok(Bundle {
-                    dll_path: dll_path, 
-                    dll_handle: plug_dll,
-                    nb_plugins: nb_plugins(), 
-                    get_plugin: get_plugin_fun});
+            Ok(Bundle {
+                dll_path: dll_path, 
+                dll_handle: plug_dll,
+                nb_plugins: nb_plugins(), 
+                c_get_plugin: mem::transmute(c_get_plugin_fun)})
         }
     }
 
@@ -144,13 +151,9 @@ pub fn find_bundles(bundle_paths: Vec<PathBuf>) -> Vec<Bundle> {
             Ok(entries) => { 
                 for d_entry in entries {
                     if is_ofx_bundle(&d_entry) {
-                        match Bundle::init_from_path(d_entry) {
-                            Ok(bundle) => { 
-                                bundles.push(bundle)
-                            }
-                            Err(k) => {
-                                error!("{}", k);
-                            }
+                        match Bundle::create_from_path(d_entry) {
+                            Ok(bundle) =>  bundles.push(bundle),
+                            Err(k) => error!("{}", k),
                         }
                     } else {
                         warn!("folder {:?} is not an ofx bundle", 
@@ -158,9 +161,7 @@ pub fn find_bundles(bundle_paths: Vec<PathBuf>) -> Vec<Bundle> {
                     }
                 }
             }
-            Err(k) => {
-                error!("{:?}: {}", path, k);
-            }
+            Err(k) => error!("{:?}: {}", path, k), 
         }
     }
     
