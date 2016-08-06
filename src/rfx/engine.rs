@@ -3,8 +3,9 @@ use libc;
 use ofx::core::*;
 use ofx::plugin::*;
 use ofx::property::*;
+use rfx::propertyset::*;
 use ofx::imageeffect::*;
-use bundle::Bundle;
+use rfx::bundle::Bundle;
 use std::collections::HashMap;
 use std::mem::transmute;
 use std::ffi::*;
@@ -50,8 +51,8 @@ impl Engine {
                             _ => error!("plugin can't describe itself"),
                         }
                     }
-                    kOfxStatReplyDefault => println!(""),
-                    kOfxStatFailed => println!(""),
+                    kOfxStatReplyDefault => println!("load plugin returned kOfxStatReplyDefault "),
+                    kOfxStatFailed => println!("load plugin returned kOfxStatFailed "),
                     kOfxStatErrFatal => panic!("plugins raised a fatal error"),
                     _ => error!("load action returned unhandled error code"),
                 } 
@@ -96,8 +97,8 @@ impl Engine {
     }
 }
 
-#[cfg(test)]
-use ofx::propertyvalue::*;
+//#[cfg(test)]
+//use rfx::propertyset::*;
 
 #[test]
 fn check_properties() {

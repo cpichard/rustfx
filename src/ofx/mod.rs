@@ -6,9 +6,15 @@ pub mod core;
 #[no_mangle]
 pub mod property;
 
+#[allow(unused_variables)]
 pub mod param;
 pub mod plugin;
 
 #[allow(unused_variables)]
 pub mod imageeffect;
-pub mod propertyvalue;
+
+pub mod memory;
+
+pub mod progress;
+
+pub mod timeline;

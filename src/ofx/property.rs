@@ -1,49 +1,16 @@
 // Property suite
 extern crate libc;
-use std::collections::HashMap;
-use std::ffi::{CString, CStr};
-
+use std::ffi::*;
 use std::convert::*;
 use ofx::core::*;
 use std::slice;
 use std::mem;
-use ofx::propertyvalue::*;
-
-
-/// Properties are stored in a HashMap for now
-#[repr(C)]
-pub struct OfxPropertySet {
-    pub props: Box<HashMap<CString, PropertyValue>>,
-}
+use std::ptr;
+use rfx::propertyset::*;
 
 /// Handles are passed to the C plugins, the void * type
 /// is C compatible type
 pub type OfxPropertySetHandle = * mut libc::c_void;
-
-impl OfxPropertySet {
-    
-    pub fn new () -> Box<Self> {
-        let prop_set = OfxPropertySet {
-            props: Box::new(HashMap::new()),
-        };
-        Box::new(prop_set)
-    }
-    
-    pub fn insert<K, T>(& mut self, key: K, value: T) -> Option<PropertyValue> 
-        where PropertyValue: From<T>, K : Into<Vec<u8>>
-    {
-        let key_cstring = CString::new(key).unwrap();
-        self.props.insert(key_cstring, PropertyValue::from(value))
-    } 
-
-    pub fn get(& mut self, key: &CString) -> Option<&PropertyValue> {
-        trace!("property set {:?} queried", self as * const _);    
-        debug!("in function get, getting {:?}", key);
-        debug!("self.hashmap queried {:?}", & self.props as * const _);
-        self.props.get(key)
-    }
-}
-
 
 /// Function signature definition
 type PropSetPointerType = extern fn (OfxPropertySetHandle, * const libc::c_char, libc::c_int, * const libc::c_void) -> OfxStatus;
@@ -61,7 +28,7 @@ type PropGetIntType = extern fn(OfxPropertySetHandle, * const libc::c_char, libc
 type PropGetPointerNType = extern fn(OfxPropertySetHandle, * const libc::c_char, libc::c_int, *mut * const libc::c_void) -> OfxStatus;
 type PropGetStringNType = extern fn(OfxPropertySetHandle, * const libc::c_char, libc::c_int, *mut * const libc::c_char) -> OfxStatus;
 type PropGetDoubleNType = extern fn(OfxPropertySetHandle, * const libc::c_char, libc::c_int, *mut libc::c_double) -> OfxStatus;
-type PropGetIntegerNType = extern fn(OfxPropertySetHandle, * const libc::c_char, libc::c_int, *mut libc::c_double) -> OfxStatus;
+type PropGetIntegerNType = extern fn(OfxPropertySetHandle, * const libc::c_char, libc::c_int, *mut libc::c_int) -> OfxStatus;
 type PropResetType = extern fn(OfxPropertySetHandle, * const libc::c_char) -> OfxStatus;
 type PropGetDimensionType = extern fn(OfxPropertySetHandle, * const libc::c_char, * mut libc::c_int) -> OfxStatus;
 
@@ -118,12 +85,11 @@ pub extern fn insert_property_multiple<T>(properties:OfxPropertySetHandle,
         let mut values : Vec<T> = Vec::new();
         values.extend_from_slice(rawparts);
         let key = CStr::from_ptr(property);
-        //(*properties).insert(key.to_owned(), PropertyValue::from(values));
-        let inner_props : * mut OfxPropertySet = mem::transmute(properties);
-        //(*inner_props).insert(key.to_str().unwrap(), values);
+        let property_set : & mut OfxPropertySet = mem::transmute(properties); 
+        property_set.insert(key.to_owned(), values);
     }
     // TODO : should return the correct error code 
-    return 0;
+    kOfxStatOK
 }
 
 /// Generic function to retrieve a value from a property set
@@ -154,18 +120,22 @@ extern fn get_property_multiple<T>(properties: OfxPropertySetHandle,
                          property: * const libc::c_char,
                          count: libc::c_int,
                          dest: * mut T) -> OfxStatus
-    where PropertyValue: Into<Vec<T>>, T: Clone 
+    where Vec<T>: From<PropertyValue>, T: Clone 
 {
-    //unsafe {
-    //    let key_cstr = CStr::from_ptr(property);
-    //    let key_cstring = key_cstr.to_owned(); // FIXME this is not efficient
-    //    let inner_props : * mut OfxPropertySet = mem::transmute(properties);
-    //    match (*inner_props).get(&key_cstring) {
-    //        Some(prop) => panic!("not implemented"),
-    //        None => panic!("could not find multiple key"),
-    //    }
-    //}
-    panic!("code is missing ?");
+    unsafe {
+        let key_cstr = CStr::from_ptr(property);
+        let key_cstring = key_cstr.to_owned(); // FIXME this is not efficient
+        let inner_props : * mut OfxPropertySet = mem::transmute(properties);
+        match (*inner_props).get(&key_cstring) {
+                
+            Some(prop) => {
+                let found : Vec<T> = Vec::from(prop.clone());
+                ptr::copy(&found[0], dest, count as usize);
+            }
+            None => panic!("could not find key"),
+        }
+    }
+    kOfxStatOK
 }
 
 #[allow(unused_variables)]
@@ -205,33 +175,61 @@ pub static OFX_PROPERTY_SUITE_V1 : OfxPropertySuiteV1 = OfxPropertySuiteV1 {
             propGetDimension: prop_get_dimension_func
 };
 
-
 #[test]
-fn test_property_set_and_get_integer() {
-    let mut properties = OfxPropertySet::new();
-    let key = CString::new("Test").unwrap();
-    let value = 9299 as i32;
-    properties.insert(key.clone(), value);
-    let value_wrapper = PropertyValue::Integer(value);
-    assert_eq!(properties.get(&key), Some(&value_wrapper));
+fn ofx_property_set_and_get_pointer() {
+    let prop_set = OfxPropertySet::new();
+    let prop_name = CString::new("TestProperty").unwrap().as_ptr();
+    let prop_set_ptr = Box::into_raw(prop_set) as * mut libc::c_void;
+    let value : i32 = 283839;
+    let value_set : * const libc::c_void = unsafe {mem::transmute(&value)};
+    let value_get : * mut _ = ptr::null_mut();
+    assert!(value_set != value_get);    
+    unsafe {
+        (OFX_PROPERTY_SUITE_V1.propSetPointer)(prop_set_ptr, prop_name, 0, value_set);
+        (OFX_PROPERTY_SUITE_V1.propGetPointer)(prop_set_ptr, prop_name, 0, mem::transmute(&value_get));
+    }
+    assert_eq!(value_set, value_get);    
 }
 
 #[test]
-fn test_property_set_and_get_floating() {
-    let mut properties = OfxPropertySet::new();
-    let key = CString::new("Test").unwrap();
-    let value = 9299.0 as f64;
-    properties.insert(key.clone(), value);
-    let value_wrapper = PropertyValue::Double(value);
-    assert_eq!(properties.get(&key), Some(&value_wrapper));
+fn ofx_property_set_and_get_int() {
+    let prop_set = OfxPropertySet::new();
+    let prop_name = CString::new("TestProperty").unwrap().as_ptr();
+    let prop_set_ptr = Box::into_raw(prop_set) as * mut libc::c_void;
+    let value_set : i32 = 37677;
+    let value_get : i32 = 0;
+    unsafe {
+        (OFX_PROPERTY_SUITE_V1.propSetInt)(prop_set_ptr, prop_name, 0, value_set);
+        (OFX_PROPERTY_SUITE_V1.propGetInt)(prop_set_ptr, prop_name, 0, mem::transmute(&value_get));
+    }
+    assert_eq!(value_set, value_get);    
 }
 
 #[test]
-fn test_property_empty() {
-    let mut properties = OfxPropertySet::new();
-    let key = CString::new("Test").unwrap();
-    assert_eq!(properties.get(&key), None);
+fn ofx_property_set_and_get_double() {
+    let prop_set = OfxPropertySet::new();
+    let prop_name = CString::new("TestProperty").unwrap().as_ptr();
+    let prop_set_ptr = Box::into_raw(prop_set) as * mut libc::c_void;
+    let value_set : libc::c_double = 37677.0;
+    let value_get : libc::c_double = 0.0;
+    unsafe {
+        (OFX_PROPERTY_SUITE_V1.propSetDouble)(prop_set_ptr, prop_name, 0, value_set);
+        (OFX_PROPERTY_SUITE_V1.propGetDouble)(prop_set_ptr, prop_name, 0, mem::transmute(&value_get));
+    }
+    assert_eq!(value_set, value_get);    
 }
 
+#[test]
+fn ofx_property_set_and_get_multiple_int() {
+    let prop_set = OfxPropertySet::new();
+    let prop_name = CString::new("TestProperty").unwrap().as_ptr();
+    let prop_set_ptr = Box::into_raw(prop_set) as * mut libc::c_void;
+    let value_set : [i32;3] = [37677, 677, 90];
+    let value_get : [i32;3] = [0, 0, 0];
+    unsafe {
+        (OFX_PROPERTY_SUITE_V1.propSetIntN)(prop_set_ptr, prop_name, 3, &value_set[0]);
+        (OFX_PROPERTY_SUITE_V1.propGetIntegerN)(prop_set_ptr, prop_name, 3, mem::transmute(&(value_get[0])));
+    }
+    assert_eq!(value_set, value_get);    
+}
 
-// TODO : test override value with type change; shouldn't happen
