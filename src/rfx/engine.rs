@@ -2,7 +2,7 @@
 use libc;
 use ofx::core::*;
 use ofx::plugin::*;
-use ofx::property::*;
+//use ofx::property::*;
 use rfx::propertyset::*;
 use ofx::imageeffect::*;
 use rfx::bundle::Bundle;

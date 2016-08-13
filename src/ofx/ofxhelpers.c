@@ -3,8 +3,12 @@
 #include <stdio.h>
 
 
-extern void param_get_varargs(void *handle, void *args);
-extern void param_set_varargs(void *handle, void *args);
+//extern void param_get_varargs(void *handle, void *args);
+//extern void param_set_varargs(void *handle, void *args);
+extern unsigned int param_get_nb_component(void *handle);
+extern void param_set_components(void *handle, void *data);
+extern void param_get_components(void *handle, void *data);
+extern unsigned int param_get_type(void *handle);
 
 // TODO: pointer on different constant in this helper ?
 // To avoid allocating CStrings over and over
@@ -20,7 +24,28 @@ int c_test_host(void *host) {
 OfxStatus param_set_value (void *handle, ...) {
     va_list vaargs;
     va_start(vaargs, handle);
-    param_set_varargs(handle, &handle + sizeof(void*));
+    
+    const unsigned int nb = param_get_nb_component(handle);
+    const unsigned int tp = param_get_type(handle); // replace by param_type_is_float/int/string
+    if (tp==0) {
+        int data[nb];
+        for (unsigned int i=0; i < nb; i++)
+        {
+            data[i] = va_arg(vaargs, int);
+        }
+        param_set_components(handle, &data[0]);
+    } else if (tp==1) {
+        double data[nb];
+        for (unsigned int i=0; i < nb; i++)
+        {
+            data[i] = va_arg(vaargs, double);
+        }
+        param_set_components(handle, &data[0]);
+    } else {
+        // error
+        printf("error, parameter type unknown\n");
+    }
+
     va_end(vaargs);
     return kOfxStatOK;
 }
@@ -28,18 +53,31 @@ OfxStatus param_set_value (void *handle, ...) {
 OfxStatus param_get_value (void *handle, ...) {
     va_list vaargs;
     va_start(vaargs, handle);
-    printf("entering C compiled code\n");
-    // cast handle
-    //OfxParameterStruct *pstruct = (OfxParameterStruct *)handle;
-    //@int nb_params = pstruct->get_nb_param();
-    //int nb_params = get_nb_param(handle); // from rust compiled code
-    param_get_varargs(handle, vaargs);
-    //pstruct->param_get_3_int(pstruct, 1, 2, 3);
-    //for (; n; n--){
-    //    i = va_arg(ap, int); // check if there is a function to iterate over the params.
-                               // how is it implemented in C ? (C book should have the answer)
-    //  set_param(handle, n, ap);
-    //}
+    
+    const unsigned int nb = param_get_nb_component(handle);
+    const unsigned int tp = param_get_type(handle); // replace by param_type_is_float/int/string
+    if (tp==0) {
+        int data[nb];
+        param_get_components(handle, &data[0]);
+        for (unsigned int i=0; i < nb; i++)
+        {
+            int *val = va_arg(vaargs, int*); 
+            *val = data[i];
+        }
+    } else if (tp==1) {
+        double data[nb];
+        param_get_components(handle, &data[0]);
+        for (unsigned int i=0; i < nb; i++)
+        {
+            double * val = va_arg(vaargs, double*); 
+            *val = data[i];
+        }
+        param_set_components(handle, &data[0]);
+    } else {
+        // error
+        printf("error, parameter type unknown\n");
+    }
+
     va_end(vaargs);
     return kOfxStatOK;
 }

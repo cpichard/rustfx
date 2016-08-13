@@ -15,6 +15,7 @@ pub mod imageeffect;
 
 pub mod memory;
 
+#[allow(unused_variables)]
 pub mod progress;
 
 pub mod timeline;

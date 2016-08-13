@@ -2,10 +2,10 @@
 extern crate libc;
 use std::convert::*;
 use std::collections::HashMap;
-use std::ffi::{CString, CStr};
-use ofx::core::*;
-use std::slice;
-use std::mem;
+use std::ffi::{CString};
+//use ofx::core::*;
+//use std::slice;
+//use std::mem;
 
 /// Properties are stored in a HashMap for now
 pub struct OfxPropertySet {
@@ -33,6 +33,12 @@ impl OfxPropertySet {
         debug!("in function get, getting {:?}", key);
         debug!("self.hashmap queried {:?}", & self.props as * const _);
         self.props.get(key)
+    }
+}
+
+impl Default for Box<OfxPropertySet> {
+    fn default() -> Box<OfxPropertySet> {
+        OfxPropertySet::new()
     }
 }
 

@@ -10,7 +10,7 @@ extern fn memory_alloc (handle: * mut libc::c_void, nbytes: libc::size_t, alloca
     }
 
     unsafe {
-        *allocated = libc::malloc(nbytes);
+        *allocated = malloc(nbytes);
         if (*allocated).is_null() {
             return kOfxStatErrMemory;
         } else {
@@ -23,7 +23,7 @@ extern fn memory_free(allocated: * mut libc::c_void) -> OfxStatus {
     if allocated.is_null() {
         return kOfxStatErrBadHandle;
     } else {
-        unsafe {libc::free(allocated);}
+        unsafe {free(allocated);}
     }
     kOfxStatOK
 }
