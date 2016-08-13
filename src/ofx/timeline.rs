@@ -11,7 +11,6 @@ pub struct OfxTimelineSuiteV1 {
     getTimeBounds: extern fn (* mut c_void, * mut c_double, * mut c_double) -> OfxStatus,
 }
 
-
 pub extern fn get_time(handle: * mut c_void, time: * mut c_double) -> OfxStatus {
 
     kOfxStatOK    

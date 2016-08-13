@@ -182,7 +182,7 @@ pub extern fn param_get_nb_component(handle: * mut c_void) -> u32 {
     unsafe {
         match *p_obj {
             OfxParam::Int1(_) => 1,
-	        OfxParam::Int2(_) => 2,
+            OfxParam::Int2(_) => 2,
             OfxParam::Int3(_, _, _) => 3,
             OfxParam::Double1(_) => 1,
             OfxParam::Double2(_, _) => 2,
@@ -209,7 +209,7 @@ pub extern fn param_set_components(handle: * mut c_void, data: * mut c_void) {
                 let value : * mut i32 = data as * mut i32; 
                 param.default = *value;
             }
-	        OfxParam::Int2(ref mut param) => {
+            OfxParam::Int2(ref mut param) => {
                 let value : * mut i32 = data as * mut i32; 
                 param.default = (*value, *value.offset(1));
                 //*p_obj = OfxParam::Int2(*value, *value.offset(1));
@@ -242,7 +242,7 @@ pub extern fn param_get_components(handle: * mut c_void, data: * mut c_void) {
                 let value : * mut i32 = data as * mut i32; 
                 *value = param.default;
             }
-	        OfxParam::Int2(ref param) => {
+            OfxParam::Int2(ref param) => {
                 let value : * mut i32 = data as * mut i32; 
                 *value = param.default.0;
                 *value.offset(1) = param.default.1;
@@ -272,7 +272,7 @@ pub extern fn param_get_type(handle: * mut c_void) -> u32 {
     unsafe {
         match *p_obj {
             OfxParam::Int1(_) => 0,
-	        OfxParam::Int2(_) => 0,
+            OfxParam::Int2(_) => 0,
             OfxParam::Int3(_, _, _) => 0,
             OfxParam::Double1(_) => 1,
             OfxParam::Double2(_, _) => 1,
@@ -293,14 +293,14 @@ pub extern fn param_get_type(handle: * mut c_void) -> u32 {
 // TODO: return a pointer on a parameter
 extern fn param_get_handle(pset_ptr: OfxParamSetHandle, name: * const c_char, handle: * mut OfxParamHandle, props: * mut OfxPropertySetHandle)-> OfxStatus {
     unsafe {
-    let mut param_set : & mut OfxParameterSet = transmute(pset_ptr);
-    *handle = param_set.get_handle(name);
+        let mut param_set : & mut OfxParameterSet = transmute(pset_ptr);
+        *handle = param_set.get_handle(name);
     }
-	kOfxStatOK
+    kOfxStatOK
 }
 
 extern fn param_set_get_property_set(handle: OfxParamHandle, pset: * mut OfxPropertySetHandle) -> OfxStatus {
-	kOfxStatOK
+    kOfxStatOK
 }
 
 extern fn param_get_num_keys(handle: OfxParamHandle, nb_keys: * mut libc::c_int) -> OfxStatus {
@@ -342,13 +342,13 @@ extern fn param_edit_end(handle: OfxParamSetHandle) -> OfxStatus {
 pub struct OfxParameterSuiteV1 {
     paramDefine : extern fn (OfxParamSetHandle, * const c_char, * const c_char, * mut OfxPropertySetHandle) -> OfxStatus,
     paramGetHandle: ParamGetHandleType, 
-	paramSetGetPropertySet: ParamSetGetPropertySetType,
+    paramSetGetPropertySet: ParamSetGetPropertySetType,
     paramGetValue: ParamGetValueType,
-	paramGetValueAtTime: ParamGetValueAtTimeType,
-	paramGetDerivative: ParamGetDerivativeType,
-	paramGetIntegral: ParamGetIntegralType,
-	paramSetValue: ParamSetValueType,
-	paramSetValueAtTime: ParamSetValueAtTimeType,
+    paramGetValueAtTime: ParamGetValueAtTimeType,
+    paramGetDerivative: ParamGetDerivativeType,
+    paramGetIntegral: ParamGetIntegralType,
+    paramSetValue: ParamSetValueType,
+    paramSetValueAtTime: ParamSetValueAtTimeType,
     paramGetNumKeys: ParamGetNumKeysType,
     paramGetKeyTime: ParamGetKeyTimeType,
     paramGetKeyIndex: ParamGetKeyIndexType,
@@ -372,15 +372,15 @@ extern {
 }
 
 pub static OFX_PARAMETER_SUITE_V1 : OfxParameterSuiteV1 = OfxParameterSuiteV1 {
-	paramDefine: param_define,
-	paramGetHandle: param_get_handle,
-	paramSetGetPropertySet: param_set_get_property_set,
+    paramDefine: param_define,
+    paramGetHandle: param_get_handle,
+    paramSetGetPropertySet: param_set_get_property_set,
     paramGetValue : param_get_value,    
     paramGetValueAtTime : param_get_value_at_time,    
-	paramGetDerivative: param_get_derivative,
-	paramGetIntegral: param_get_integral,
-	paramSetValue: param_set_value,
-	paramSetValueAtTime: param_set_value_at_time,
+    paramGetDerivative: param_get_derivative,
+    paramGetIntegral: param_get_integral,
+    paramSetValue: param_set_value,
+    paramSetValueAtTime: param_set_value_at_time,
     paramGetNumKeys: param_get_num_keys,
     paramGetKeyTime: param_get_key_time,
     paramGetKeyIndex: param_get_key_index,
@@ -393,9 +393,9 @@ pub static OFX_PARAMETER_SUITE_V1 : OfxParameterSuiteV1 = OfxParameterSuiteV1 {
 
 #[cfg(test)]
 fn init_parameter_test() -> (* mut OfxParameterSet, CString, CString) {
-	let p_set = Box::into_raw(OfxParameterSet::new());
-	let p_type = CString::new("OfxParamTypeInteger").unwrap();
-	let p_name = CString::new("TestIntParam").unwrap();
+    let p_set = Box::into_raw(OfxParameterSet::new());
+    let p_type = CString::new("OfxParamTypeInteger").unwrap();
+    let p_name = CString::new("TestIntParam").unwrap();
     (p_set, p_type, p_name)
 }
 
@@ -411,11 +411,11 @@ unsafe fn param_initialization_test(param: * mut OfxParam) {
 #[test]
 fn create_parameter_set() {
     let (p_set, p_type, p_name) = init_parameter_test();
-	// call image effect to create a paramset.
-	let ret = unsafe{(OFX_PARAMETER_SUITE_V1.paramDefine)(transmute(p_set), p_type.as_ptr(), p_name.as_ptr(), ptr::null_mut())};
+    // call image effect to create a paramset.
+    let ret = unsafe{(OFX_PARAMETER_SUITE_V1.paramDefine)(transmute(p_set), p_type.as_ptr(), p_name.as_ptr(), ptr::null_mut())};
     assert!(ret == kOfxStatOK);
-	let mut p_handle : OfxParamHandle = ptr::null_mut();
-	let ret2 = unsafe {(OFX_PARAMETER_SUITE_V1.paramGetHandle)(transmute(p_set), p_name.as_ptr(), &mut p_handle, ptr::null_mut())};
+    let mut p_handle : OfxParamHandle = ptr::null_mut();
+    let ret2 = unsafe {(OFX_PARAMETER_SUITE_V1.paramGetHandle)(transmute(p_set), p_name.as_ptr(), &mut p_handle, ptr::null_mut())};
     assert!(p_handle != ptr::null_mut());
     assert!(ret2 == kOfxStatOK);
 }
@@ -441,9 +441,9 @@ fn create_and_set_parameter( ) {
 
 #[test]
 fn create_and_set_parameter_2d( ) {
-	let p_set = Box::into_raw(OfxParameterSet::new());
-	let p_type = CString::new("OfxParamTypeInteger2D").unwrap();
-	let p_name = CString::new("TestInt2DParam").unwrap();
+    let p_set = Box::into_raw(OfxParameterSet::new());
+    let p_type = CString::new("OfxParamTypeInteger2D").unwrap();
+    let p_name = CString::new("TestInt2DParam").unwrap();
     unsafe {
         let ret = (OFX_PARAMETER_SUITE_V1.paramDefine)(transmute(p_set), p_type.as_ptr(), p_name.as_ptr(), ptr::null_mut());
         let mut p_handle : OfxParamHandle = ptr::null_mut();

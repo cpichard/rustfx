@@ -1,8 +1,8 @@
 //extern crate rustfxlib;
 //extern crate libc;
-//#[macro_use(warn, trace, debug, error, log)]
-//extern crate log;
-//extern crate env_logger;
+#[macro_use(warn, trace, debug, error, log)]
+extern crate log;
+extern crate env_logger;
 
 //mod ofx;
 //mod rfx;
@@ -15,7 +15,7 @@ use rustfx::rfx::bundle::*;
 
 fn main() {
     //
-    //env_logger::init().unwrap();
+    env_logger::init().unwrap();
     //trace!("Initializing rustfx");
 
     // Get env OFX and list all the plugins specified in the path
