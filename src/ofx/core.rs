@@ -20,6 +20,7 @@ pub const kOfxStatFailed : OfxStatus = 1;
 pub const kOfxStatErrFatal : OfxStatus = 2;
 pub const kOfxStatErrMemory : OfxStatus = 8;
 pub const kOfxStatErrBadHandle : OfxStatus = 9;
+pub const kOfxStatErrBadIndex : OfxStatus = 10;
 pub const kOfxStatReplyDefault : OfxStatus = 14;
 
 /// The time is represented as double
