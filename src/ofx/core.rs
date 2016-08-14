@@ -8,6 +8,7 @@ use ofx::param::*;
 use ofx::memory::*;
 use ofx::thread::*;
 use ofx::interact::*;
+use ofx::message::*;
 use std::mem;
 use std::ffi::*;
 use std::ptr;
@@ -97,6 +98,9 @@ extern fn fetch_suite(host: OfxPropertySetHandle,
         "OfxInteractSuite" => {
             unsafe {mem::transmute(& OFX_INTERACT_SUITE_V1)}
         } 
+        "OfxMessageSuite" => {
+            unsafe {mem::transmute(& OFX_MESSAGE_SUITE_V2)}
+        }
         _ => {
             error!("plugin is asking for an unimplemented suite : {}", suite_str);
             ptr::null_mut() as * mut c_void

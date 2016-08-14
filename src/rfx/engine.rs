@@ -92,7 +92,7 @@ impl Engine {
 
     fn describe_capabilities() -> Box<OfxPropertySet> {
         let mut properties = OfxPropertySet::new();
-        properties.insert("OfxImageEffectPropMultipleClipDepths", 0);
+        properties.insert("OfxImageEffectPropMultipleClipDepths", 0, 0);
         properties
     }
 }
@@ -105,6 +105,6 @@ fn check_properties() {
     let engine = Engine::new();    
     let ofx_str = CString::new("OfxImageEffectPropMultipleClipDepths").unwrap();
     let property_set : * mut OfxPropertySet = unsafe{transmute((*engine.ofx_host).host)};
-    let result = unsafe {(*property_set).get(&ofx_str)};
+    let result = unsafe {(*property_set).get(&ofx_str, 0)};
     assert_eq!(result, Some(&PropertyValue::from(0)))
 }
