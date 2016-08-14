@@ -3,8 +3,7 @@
 #include <stdio.h>
 
 
-//extern void param_get_varargs(void *handle, void *args);
-//extern void param_set_varargs(void *handle, void *args);
+// Rust callbacks
 extern unsigned int param_get_nb_component(void *handle);
 extern void param_set_components(void *handle, void *data);
 extern void param_get_components(void *handle, void *data);
@@ -19,6 +18,18 @@ int c_test_host(void *host) {
         return 1;
     };
     return 0;  
+}
+
+// TODO: handle message suite
+int c_message(void *handle, const char *messageType, const char * messageId, const char * format, ...)
+{
+    return kOfxStatOK;
+}
+
+// TODO: handle message suite
+int c_set_persistent_message(void *handle, const char *messageType, const char * messageId, const char * format, ...)
+{
+    return kOfxStatOK;
 }
 
 OfxStatus param_set_value (void *handle, ...) {
