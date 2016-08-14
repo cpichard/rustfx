@@ -5,13 +5,26 @@ use std::collections::HashMap;
 use std::ffi::{CString};
 use libc::*;
 
-/// Properties are stored in a HashMap. For each key store a vector of indexed properties
+/// Container for a property value
+/// A property value can be either Pointer, Integer, Double, String or Undefined
+#[derive(Debug, PartialEq, Clone)]
+pub enum PropertyValue {
+    Pointer (* const c_void),
+    Integer (c_int),
+    Double (c_double), // TODO: double check it shouldn't be a float
+    String (* const c_char),
+    Undefined,
+}
+
+/// Properties are stored in a HashMap. 
+/// For each key we store a vector of properties
 pub struct OfxPropertySet {
     props: HashMap<CString, Vec<PropertyValue>>,
 }
 
 impl OfxPropertySet {
-    
+   
+    /// Create a new boxed property set 
     pub fn new () -> Box<Self> {
         let prop_set = OfxPropertySet {
             props: HashMap::new(),
@@ -19,13 +32,14 @@ impl OfxPropertySet {
         Box::new(prop_set)
     }
     
+    /// Insert a value at (key, index)
     pub fn insert<K, T>(& mut self, key: K, index: usize, value: T)
         where PropertyValue: From<T>, K : Into<Vec<u8>>
     {
         // Look for property 
         let key_cstring = CString::new(key).unwrap();
         let mut properties = self.props.entry(key_cstring).or_insert(Vec::with_capacity(8));
-        // If index is out of bounds
+        // Resize if index is out of bounds
         if index >= properties.len() {
             properties.resize(index+1, PropertyValue::Undefined);
         }
@@ -35,15 +49,15 @@ impl OfxPropertySet {
         };
     } 
 
-    /// get_one property ? and get_all ?
+    /// Get a property value at (key, index) 
     pub fn get(& mut self, key: &CString, index: usize) -> Option<&PropertyValue> {
-        let key_cstring = key.clone(); // FIXME: clone doesn't look efficient nor appropriate here
-        match self.props.get(&key_cstring) {
+        match self.props.get(key) {
             Some(prop_vector) => prop_vector.get(index),
             None => None,
         }
     }
-
+    
+    /// Returns the number of properties for the key
     pub fn dimension(& mut self, key: &CString) -> Option<usize> {
         match self.props.get(key) {
             Some(prop_vector) => Some(prop_vector.len()),
@@ -58,15 +72,6 @@ impl Default for Box<OfxPropertySet> {
     }
 }
 
-/// Container for a property value
-#[derive(Debug, PartialEq, Clone)]
-pub enum PropertyValue {
-    Pointer (* const c_void),
-    Integer (c_int),
-    Double (c_double), // TODO: double check it shouldn't be a float
-    String (* const c_char),
-    Undefined,
-}
 
 /// Functions to convert to PropertyValues
 impl From<* const c_void> for PropertyValue {
