@@ -27,7 +27,6 @@ pub mod progress;
 #[allow(unused_variables)]
 pub mod timeline;
 
-
 #[allow(unused_variables)]
 pub mod thread;
 

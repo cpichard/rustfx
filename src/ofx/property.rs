@@ -231,6 +231,19 @@ pub static OFX_PROPERTY_SUITE_V1
 use std::ptr;
 
 #[test]
+fn ofx_property_empty_set() {
+    let prop_set = OfxPropertySet::new();
+    let prop_name = CString::new("TestProperty").unwrap().as_ptr();
+    let prop_set_ptr = Box::into_raw(prop_set) as * mut c_void;
+    let value : i32 = 283839;
+    let value_get : * const c_void = unsafe {mem::transmute(&value)};
+    unsafe {
+        let ret = (OFX_PROPERTY_SUITE_V1.propGetString)(prop_set_ptr, prop_name, 0, mem::transmute(&value_get));
+    }
+    //TODO assert_eq!(ret, );    
+}
+
+#[test]
 fn ofx_property_set_and_get_pointer() {
     let prop_set = OfxPropertySet::new();
     let prop_name = CString::new("TestProperty").unwrap().as_ptr();
@@ -275,6 +288,20 @@ fn ofx_property_set_and_get_double() {
 }
 
 #[test]
+fn ofx_property_set_and_get_string() {
+    let prop_set = OfxPropertySet::new();
+    let prop_name = CString::new("TestProperty").unwrap().as_ptr();
+    let prop_set_ptr = Box::into_raw(prop_set) as * mut c_void;
+    let value_set : * const c_char = CString::new("TestPropertyValue").unwrap().as_ptr();;
+    let value_get : * mut c_char = ptr::null_mut();
+    unsafe {
+        (OFX_PROPERTY_SUITE_V1.propSetString)(prop_set_ptr, prop_name, 0, value_set);
+        (OFX_PROPERTY_SUITE_V1.propGetString)(prop_set_ptr, prop_name, 0, mem::transmute(&value_get));
+    }
+    unsafe { assert_eq!(CStr::from_ptr(value_set), CStr::from_ptr(value_get)); }
+}
+
+#[test]
 fn ofx_property_set_and_get_multiple_int() {
     let prop_set = OfxPropertySet::new();
     let prop_name = CString::new("TestProperty").unwrap().as_ptr();
@@ -285,6 +312,6 @@ fn ofx_property_set_and_get_multiple_int() {
         (OFX_PROPERTY_SUITE_V1.propSetIntN)(prop_set_ptr, prop_name, 3, &value_set[0]);
         (OFX_PROPERTY_SUITE_V1.propGetIntegerN)(prop_set_ptr, prop_name, 3, mem::transmute(&(value_get[0])));
     }
-    assert_eq!(value_set, value_get);    
+    assert_eq!(value_set, value_get); 
 }
 

@@ -167,6 +167,7 @@ fn test_property_set_and_get_string() {
     assert_eq!(properties.get(&key, 0), Some(&value_wrapper));
 }
 
+
 #[test]
 fn test_property_set_and_get_multiple_integer() {
     let mut properties = OfxPropertySet::new();

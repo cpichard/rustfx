@@ -56,6 +56,16 @@ pub enum OfxParam {
 	//Parametric(i32),// FIXME: create the correct data needed
 }
 
+impl OfxParam {
+    pub fn properties(& self) -> * mut c_void {
+        match *self {
+            OfxParam::Int1(ref val) => unsafe{transmute(&val.properties)},
+            OfxParam::Int2(ref val) => unsafe{transmute(&val.properties)},
+            _ => ptr::null_mut(),
+        }
+    }    
+}
+
 // Holds parameters. There is one OfxParameterSet per OfxImageEffect
 pub struct OfxParameterSet {
 	data: HashMap<CString, OfxParam>,
@@ -74,6 +84,7 @@ impl OfxParameterSet {
 	pub fn define(& mut self, p_type: *const c_char, p_name: * const c_char) {
         let p_type_str = unsafe { CStr::from_ptr(p_type) }.to_str().unwrap();
         let p_name_str = unsafe { CStr::from_ptr(p_name) }.to_owned();
+        trace!("defining parameter {:?} {:?}", p_name_str, p_type_str);
         match p_type_str {
             "OfxParamTypeInteger" => self.data.insert(p_name_str, OfxParam::Int1(KeyFramedParameter::default())), 
             "OfxParamTypeDouble" => self.data.insert(p_name_str, OfxParam::Double1(0.0)), 
@@ -95,17 +106,15 @@ impl OfxParameterSet {
         
 	}
    
-    pub fn get_handle(& mut self, p_name: * const c_char) -> * mut c_void {
+    pub fn get_handle_and_prop(& mut self, p_name: * const c_char) -> (* mut c_void, * mut c_void) {
         let p_name_str = unsafe { CStr::from_ptr(p_name) }.to_owned();
         unsafe {
-        match self.data.get(&p_name_str) {
-            Some(param) => return transmute(param) ,
-            None => return ptr::null_mut(),    
-        }
+            match self.data.get(&p_name_str) {
+                Some(param) => return (transmute(param), param.properties()) ,
+                None => return (ptr::null_mut(), ptr::null_mut()), 
+            }
         }
     }
-
-
 }
 
 pub type OfxParamSetHandle = * mut c_void; 
@@ -132,38 +141,7 @@ pub type ParamEditEndType = extern fn (OfxParamSetHandle) -> OfxStatus;
 
 
 /*
-
-#define kOfxParamTypeInteger "OfxParamTypeInteger"
-/** @brief String to identify a param as a Single valued floating point parameter  */
-#define kOfxParamTypeDouble "OfxParamTypeDouble"
-/** @brief String to identify a param as a Single valued boolean parameter */
-#define kOfxParamTypeBoolean "OfxParamTypeBoolean"
-/** @brief String to identify a param as a Single valued, 'one-of-many' parameter */
-#define kOfxParamTypeChoice "OfxParamTypeChoice"
-/** @brief String to identify a param as a Red, Green, Blue and Alpha colour parameter */
-#define kOfxParamTypeRGBA "OfxParamTypeRGBA"
-/** @brief String to identify a param as a Red, Green and Blue colour parameter */
-#define kOfxParamTypeRGB "OfxParamTypeRGB"
-/** @brief String to identify a param as a Two dimensional floating point parameter */
-#define kOfxParamTypeDouble2D "OfxParamTypeDouble2D"
-/** @brief String to identify a param as a Two dimensional integer point parameter */
-#define kOfxParamTypeInteger2D "OfxParamTypeInteger2D"
-/** @brief String to identify a param as a Three dimensional floating point parameter */
-#define kOfxParamTypeDouble3D "OfxParamTypeDouble3D"
-/** @brief String to identify a param as a Three dimensional integer parameter */
-#define kOfxParamTypeInteger3D "OfxParamTypeInteger3D"
-/** @brief String to identify a param as a String (UTF8) parameter */
-#define kOfxParamTypeString "OfxParamTypeString"
-/** @brief String to identify a param as a Plug-in defined parameter */
-#define kOfxParamTypeCustom "OfxParamTypeCustom"
-/** @brief String to identify a param as a Grouping parameter */
-#define kOfxParamTypeGroup "OfxParamTypeGroup"
-/** @brief String to identify a param as a page parameter */
-#define kOfxParamTypePage "OfxParamTypePage"
-/** @brief String to identify a param as a PushButton parameter */
-#define kOfxParamTypePushButton "OfxParamTypePushButton"
-*/
-/*
+   Parameter definition, caller in decribe in context
    Arguments
    pset_ptr:  handle to the parameter set descriptor that will hold this parameter
    p_type: type of the parameter to create, one of the kOfxParamType #defines
@@ -172,6 +150,7 @@ pub type ParamEditEndType = extern fn (OfxParamSetHandle) -> OfxStatus;
  */
 extern fn param_define(pset_ptr: OfxParamSetHandle, p_type: *const c_char, p_name: * const c_char, props: * mut OfxPropertySetHandle) -> OfxStatus {
     let mut param_set : & mut OfxParameterSet = unsafe {transmute(pset_ptr)};
+    trace!("================>param define");
     param_set.define(p_type, p_name);
     kOfxStatOK
 }
@@ -292,9 +271,21 @@ pub extern fn param_get_type(handle: * mut c_void) -> u32 {
 
 // TODO: return a pointer on a parameter
 extern fn param_get_handle(pset_ptr: OfxParamSetHandle, name: * const c_char, handle: * mut OfxParamHandle, props: * mut OfxPropertySetHandle)-> OfxStatus {
+    if pset_ptr.is_null() {
+        error!("param_get_handle parameter set handle is null");
+        return kOfxStatErrBadHandle;
+    }
+    trace!("paramGetHandle {:?} in {:?}", name, pset_ptr);
     unsafe {
         let mut param_set : & mut OfxParameterSet = transmute(pset_ptr);
-        *handle = param_set.get_handle(name);
+        let handle_and_prop = param_set.get_handle_and_prop(name);
+        *handle = handle_and_prop.0;
+        if !props.is_null() {
+            // TODO : set properties
+            //param : & OfxParam = transmute(handle);
+            warn!("setting prop {:?}", handle_and_prop.1);
+            *props = handle_and_prop.1;
+        }
     }
     kOfxStatOK
 }

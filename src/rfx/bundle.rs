@@ -22,13 +22,39 @@ pub struct Bundle {
 impl Bundle {
 
     // Returns a reference of the plugin returned by the library
-    pub fn get_plugin(&self, nb: c_uint) -> & OfxPlugin {
+    pub fn get_plugin(&self, nb: c_uint) -> & mut OfxPlugin {
         let plugin_ptr = (self.c_get_plugin)(nb);
         if !plugin_ptr.is_null() {
             unsafe {mem::transmute(plugin_ptr)}
         } else {
             panic!("plugin pointer is null");    
         }
+    }
+    /// Returns a list of found bundles in the bundle_paths
+    pub fn from_paths(bundle_paths: Vec<PathBuf>) -> Vec<Bundle> {
+
+        let mut bundles : Vec<Bundle> = Vec::new();
+
+        for path in bundle_paths {
+            match path.as_path().read_dir() {
+                Ok(entries) => { 
+                    for d_entry in entries {
+                        if is_ofx_bundle(&d_entry) {
+                            match Bundle::create_from_path(d_entry) {
+                                Ok(bundle) =>  bundles.push(bundle),
+                                Err(k) => error!("{}", k),
+                            }
+                        } else {
+                            warn!("folder {:?} is not an ofx bundle", 
+                                        d_entry.unwrap().path());
+                        }
+                    }
+                }
+                Err(k) => error!("{:?}: {}", path, k), 
+            }
+        }
+        
+        bundles
     }
 
     /// Create a Bundle from a directory
@@ -104,7 +130,7 @@ impl Drop for Bundle {
 }
 
 /// Get bundle paths from the OFXPLUGINS env variable
-pub fn get_bundle_paths() -> Vec<PathBuf> {
+pub fn default_bundle_paths() -> Vec<PathBuf> {
     let mut paths : Vec<PathBuf> = Vec::new();
     match env::var_os("OFXPLUGINS") {
         Some(inline_paths) => {
@@ -141,32 +167,6 @@ fn is_ofx_bundle(dir: & io::Result<DirEntry>) -> bool {
     }
 }
 
-/// Returns a list of found bundles in the bundle_paths
-pub fn find_bundles(bundle_paths: Vec<PathBuf>) -> Vec<Bundle> {
-
-    let mut bundles : Vec<Bundle> = Vec::new();
-
-    for path in bundle_paths {
-        match path.as_path().read_dir() {
-            Ok(entries) => { 
-                for d_entry in entries {
-                    if is_ofx_bundle(&d_entry) {
-                        match Bundle::create_from_path(d_entry) {
-                            Ok(bundle) =>  bundles.push(bundle),
-                            Err(k) => error!("{}", k),
-                        }
-                    } else {
-                        warn!("folder {:?} is not an ofx bundle", 
-                                    d_entry.unwrap().path());
-                    }
-                }
-            }
-            Err(k) => error!("{:?}: {}", path, k), 
-        }
-    }
-    
-    bundles
-}
 
 // TODO: this should be used in a lot of places, so move to a common module
 fn from_str(s: & str) -> * const c_char {

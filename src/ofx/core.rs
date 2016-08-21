@@ -13,18 +13,39 @@ use std::mem;
 use std::ffi::*;
 use std::ptr;
 
-// TODO: finish to write all status
-pub type OfxStatus = i32;
-pub const kOfxStatOK : OfxStatus = 0;
-pub const kOfxStatFailed : OfxStatus = 1;
-pub const kOfxStatErrFatal : OfxStatus = 2;
-pub const kOfxStatErrMemory : OfxStatus = 8;
-pub const kOfxStatErrBadHandle : OfxStatus = 9;
-pub const kOfxStatErrBadIndex : OfxStatus = 10;
-pub const kOfxStatReplyDefault : OfxStatus = 14;
+// We include all the static constants which were translated 
+// from the openfx include files.
+include!("constants.rs");
+
+pub const kOfxGetNumberOfPlugins : & 'static str = "OfxGetNumberOfPlugins";
+pub const kOfxGetPlugin : & 'static str = "OfxGetPlugin";
+
+/// Utility to convert from a const char pointer received from the client 
+/// to a u8 buffer
+pub fn to_keyword<'a>(value: * const c_char) -> &'a[u8] {
+    let from_client = unsafe {CStr::from_ptr(value)};
+    from_client.to_bytes_with_nul()
+}
+
+pub fn clone_keyword<'a>(value: &'a[u8]) -> * const c_char {
+    let mut v :Vec<u8> = Vec::with_capacity(value.len());
+    unsafe {v.set_len(value.len());}
+    v.clone_from_slice(value);
+    unsafe {CString::from_vec_unchecked(v).as_ptr()}
+}
+
+///
+pub fn from_keyword<'a>(value: &'a[u8]) -> * const c_char {
+    unsafe{CStr::from_bytes_with_nul_unchecked(value).as_ptr()}
+}
+
+//pub to_pointer<Box<T>>(value: Box<T>) -> * mut c_void {
+//    
+//}
 
 /// The time is represented as double
 pub type OfxTime = f64;
+pub type OfxStatus = i32;
 
 #[repr(C)]
 pub struct OfxRectI {
@@ -49,8 +70,8 @@ pub struct OfxRangeD {
 }
 
 /// FIXME: could we store the following string as c_char instead of str ? 
-pub const kOfxGetNumberOfPlugins : & 'static str = "OfxGetNumberOfPlugins";
-pub const kOfxGetPlugin : & 'static str = "OfxGetPlugin";
+//pub const kOfxGetNumberOfPlugins : & 'static str = "OfxGetNumberOfPlugins";
+//pub const kOfxGetPlugin : & 'static str = "OfxGetPlugin";
 //const kOfxPropertySuite : &'static str = "OfxPropertySuite";
 
 #[repr(C)]
@@ -75,34 +96,37 @@ extern fn fetch_suite(host: OfxPropertySetHandle,
     if suite_name.is_null() {
         panic!("the plugin asked for a null suite");
     }
-    let suite_cstr = unsafe {CStr::from_ptr(suite_name)};
-    let suite_str = suite_cstr.to_str().unwrap();
-    match suite_str {
-        "OfxPropertySuite" => {
+    //let suite_cstr = unsafe {CStr::from_ptr(suite_name)};
+    //let suite_str = suite_cstr.to_str().unwrap();
+    //let suite_str = to_keyword(suite_name);
+    match to_keyword(suite_name) {
+        kOfxPropertySuite => {
             unsafe {mem::transmute(& OFX_PROPERTY_SUITE_V1)}
         }
-        "OfxImageEffectSuite" => {
+        kOfxImageEffectSuite => {
             unsafe {mem::transmute(& OFX_IMAGE_EFFECT_SUITE_V1)}
         }
-        "OfxParameterSuite" => {
+        kOfxParameterSuite => {
             unsafe {mem::transmute(& OFX_PARAMETER_SUITE_V1)}
         }
-        "OfxProgressSuite" => {
+        kOfxProgressSuite => {
             unsafe {mem::transmute(& OFX_PROGRESS_SUITE_V1)}
         }
-        "OfxMemorySuite" => {
+        kOfxMemorySuite => {
             unsafe {mem::transmute(& OFX_MEMORY_SUITE_V1)}
         }
-        "OfxMultiThreadSuite" => {
+        kOfxMultiThreadSuite => {
             unsafe {mem::transmute(& OFX_MULTITHREAD_SUITE_V1)}
         }
-        "OfxInteractSuite" => {
+        kOfxInteractSuite => {
             unsafe {mem::transmute(& OFX_INTERACT_SUITE_V1)}
         } 
-        "OfxMessageSuite" => {
+        kOfxMessageSuite => {
             unsafe {mem::transmute(& OFX_MESSAGE_SUITE_V2)}
         }
         _ => {
+            let suite_cstr = unsafe {CStr::from_ptr(suite_name)};
+            let suite_str = suite_cstr.to_str().unwrap();
             error!("plugin is asking for an unimplemented suite : {}", suite_str);
             ptr::null_mut() as * mut c_void
         }

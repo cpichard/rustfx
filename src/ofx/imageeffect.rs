@@ -6,9 +6,11 @@ use ofx::core::*;
 use std::mem;
 
 
+// TODO: ImageEffectStruct is used for:
+// PluginInstance
+// PluginDescriptor
 pub struct OfxImageEffectStruct {
     props: * mut OfxPropertySet,    
-
     params: * mut OfxParameterSet,
 }
 
@@ -55,10 +57,8 @@ pub type ImageMemoryFreeType = extern fn (OfxImageMemoryHandle) -> OfxStatus;
 pub type ImageMemoryLockType = extern fn (OfxImageMemoryHandle, * mut * mut libc::c_void) -> OfxStatus;
 pub type ImageMemoryUnlockType = extern fn (OfxImageMemoryHandle) -> OfxStatus;
 
-// TODO
 extern fn get_property_set(image_effect_ptr: OfxImageEffectHandle, prop_handle: * mut OfxPropertySetHandle) -> OfxStatus {
     if !image_effect_ptr.is_null() {
-        //use std::ptr;
         let image_effect : & mut OfxImageEffectStruct = unsafe{mem::transmute(image_effect_ptr)};
         unsafe {*prop_handle = image_effect.props as * mut libc::c_void};
         unsafe {trace!("getPropertySet setting props {:?}", *prop_handle as * const _)};
