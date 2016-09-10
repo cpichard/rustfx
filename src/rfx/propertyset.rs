@@ -2,7 +2,7 @@
 extern crate libc;
 use std::convert::*;
 use std::collections::HashMap;
-use std::ffi::{CString};
+use std::ffi::{CString, CStr};
 use libc::*;
 
 /// Container for a property value
@@ -12,7 +12,7 @@ pub enum PropertyValue {
     Pointer (* const c_void),
     Integer (c_int),
     Double (c_double), // TODO: double check it shouldn't be a float
-    String (* const c_char),
+    String(CString),
     Undefined,
 }
 
@@ -93,7 +93,8 @@ impl From<PropertyValue> for * const c_void {
 ///
 impl From<* const c_char> for PropertyValue {
     fn from(value: * const c_char) -> Self {
-            PropertyValue::String(value)
+        let c_str = unsafe{CStr::from_ptr(value)};
+        PropertyValue::String(c_str.to_owned())
     }
 }
 
@@ -101,7 +102,7 @@ impl From<* const c_char> for PropertyValue {
 impl From<PropertyValue> for * const c_char {
     fn from(value: PropertyValue) -> Self {
         match value {
-            PropertyValue::String(val) => val,
+            PropertyValue::String(val) => val.as_ptr(),
             _ => panic!("wrong type: String"),
         }
     }
@@ -137,6 +138,11 @@ impl From<PropertyValue> for c_int {
     }
 }
 
+pub fn properties_ptr(props: Box<OfxPropertySet> ) -> * mut c_void {
+        Box::into_raw(props) as *mut c_void
+}
+
+
 #[test]
 fn test_property_set_and_get_integer() {
     let mut properties = OfxPropertySet::new();
@@ -163,8 +169,39 @@ fn test_property_set_and_get_string() {
     let key = CString::new("Test").unwrap();
     let value = CString::new("test").unwrap();
     properties.insert(key.clone(), 0, value.as_ptr());
-    let value_wrapper = PropertyValue::String(value.as_ptr());
+    let value_wrapper = PropertyValue::String(value);
     assert_eq!(properties.get(&key, 0), Some(&value_wrapper));
+}
+
+#[cfg(test)]
+pub fn clone_keyword_test<'a>(value: &'a[u8]) -> * const c_char {
+    let mut v :Vec<u8> = Vec::with_capacity(value.len());
+    unsafe {v.set_len(value.len());}
+    v.clone_from_slice(value);
+    v.pop(); // removes \0
+    unsafe {CString::from_vec_unchecked(v).as_ptr()}
+}
+
+
+#[cfg(test)]
+pub fn kw_to_cstring_test<'a>(value: &'a[u8]) -> CString {
+    let mut v :Vec<u8> = Vec::with_capacity(value.len());
+    unsafe {v.set_len(value.len());}
+    v.clone_from_slice(value);
+    v.pop(); // removes \0
+    unsafe {CString::from_vec_unchecked(v)}
+}
+
+#[test]
+fn test_property_set_and_get_c_char() {
+    let mut properties = OfxPropertySet::new();
+    let uchar_buffer_key: &'static [u8] = b"uchar_buffer_key\0";
+    let uchar_buffer_value: &'static [u8] = b"uchar_buffer_value\0";
+    let key = kw_to_cstring_test(uchar_buffer_key); 
+    properties.insert(key, 0, clone_keyword_test(uchar_buffer_value));
+    //let value_wrapper = PropertyValue::String();
+    //let key = kw_to_cstring_test(uchar_buffer_key); 
+    //assert_eq!(properties.get(&key, 0), Some(&value_wrapper));
 }
 
 

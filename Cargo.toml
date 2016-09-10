@@ -5,6 +5,9 @@ authors = ["cyril"]
 links = "ofxhelpers"
 build = "build.rs"
 
+[profile.dev]
+panic = 'abort'
+
 [dependencies]
 libc = "*"
 log = "0.3"
