@@ -5,7 +5,7 @@ use std::collections::HashMap;
 use ofx::param::*;
 use ofx::core::*;
 use std::mem;
-use std::ffi::CString;
+use std::ffi::{CString, CStr};
 use std::ops::DerefMut;
 
 // TODO: ImageEffectStruct is used for:
@@ -14,7 +14,7 @@ use std::ops::DerefMut;
 pub struct OfxImageEffectStruct {
     props: *mut OfxPropertySet,
     params: *mut OfxParameterSet,
-    clip_defined: HashMap<CString, Box<OfxPropertySet>>, /* FIXME: we might need to store OfxImageClip instead of a propertyset */
+    clips: HashMap<CString, Box<OfxImageClip>>, 
 }
 
 pub type OfxImageEffectHandle = *mut libc::c_void;
@@ -25,7 +25,7 @@ impl OfxImageEffectStruct {
         OfxImageEffectStruct {
             props: Box::into_raw(OfxPropertySet::new()),
             params: Box::into_raw(OfxParameterSet::new()),
-            clip_defined: HashMap::new(),
+            clips: HashMap::new(),
         }
     }
 }
@@ -39,8 +39,18 @@ pub type OfxImageMemoryHandle = *mut libc::c_void;
 
 pub struct OfxImageClip {
 // TODO move ImageClip where it belongs and fill with relevant code
+    dummy_data: u32,
 }
+
 pub type OfxImageClipHandle = *mut libc::c_void;
+
+impl OfxImageClip {
+    pub fn new() -> Self {
+        OfxImageClip {dummy_data: 0}
+    }    
+
+}
+
 
 // OfxImageEffectSuite function types here for clarity
 pub type GetParamSetType = extern "C" fn(OfxImageEffectHandle, *mut OfxParamSetHandle) -> OfxStatus;
@@ -114,11 +124,15 @@ extern "C" fn clip_define(handle: OfxImageEffectHandle,
                           props: *mut OfxPropertySetHandle)
                           -> OfxStatus {
     // We need to store a property per clip names per ImageEffectHandle
-    let prop = OfxPropertySet::new();
+    let clip = OfxImageClip::new();
     let image_effect: &mut OfxImageEffectStruct = unsafe { mem::transmute(handle) };
-    image_effect.clip_defined.insert(CString::new("Test").unwrap(), prop);
+    let clip_properties : &mut OfxPropertySet = unsafe { mem::transmute(props) };
+    let key : CString = unsafe {CStr::from_ptr(name).to_owned()};
+    let value = clip_properties.get(&key, 1);
+    // FIXME: read the key and the different parameters for the clip 
+    image_effect.clips.insert(CString::new("Test").unwrap(), Box::new(clip));
     let key = CString::new("Test").unwrap();
-    let ptr_props = image_effect.clip_defined.get_mut(&key).unwrap();
+    let ptr_props = image_effect.clips.get_mut(&key).unwrap();
     unsafe { *props = mem::transmute(ptr_props.deref_mut()) };
     kOfxStatOK
 }
@@ -128,13 +142,16 @@ extern "C" fn clip_get_handle(handle: OfxImageEffectHandle,
                               clip_handle: *mut OfxImageClipHandle,
                               props: *mut OfxPropertySetHandle)
                               -> OfxStatus {
+    // Get 
     panic!("unimplemented")
 }
+
 extern "C" fn clip_get_property_set(handle: OfxImageClipHandle,
                                     props: *mut OfxPropertySetHandle)
                                     -> OfxStatus {
     panic!("unimplemented")
 }
+
 extern "C" fn clip_get_image(handle: OfxImageClipHandle,
                              time: OfxTime,
                              region: *const OfxRectD,
