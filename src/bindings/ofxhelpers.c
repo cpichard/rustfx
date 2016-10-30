@@ -1,4 +1,4 @@
-#include "../../doc/ofxCore.h"
+#include "../ofx/ofxCore.h"
 #include <stdarg.h>
 #include <stdio.h>
 
