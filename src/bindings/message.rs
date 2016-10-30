@@ -1,7 +1,7 @@
 
 extern crate libc;
 use libc::*;
-use ofx::core::*;
+use bindings::core::*;
 
 
 /*#include "ofxMessage.h"

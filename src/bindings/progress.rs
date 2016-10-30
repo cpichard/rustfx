@@ -1,6 +1,6 @@
 extern crate libc;
 use libc::{c_void, c_char, c_double};
-use ofx::core::*;
+use bindings::core::*;
 
 // handle is 
 extern fn progress_start(effect_instance:* mut c_void, label: * const c_char) -> OfxStatus {

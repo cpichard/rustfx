@@ -4,6 +4,6 @@ extern crate libc;
 extern crate log;
 extern crate env_logger;
 
-pub mod ofx;
+pub mod bindings;
 pub mod rfx;
 

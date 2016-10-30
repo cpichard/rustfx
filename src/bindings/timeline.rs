@@ -1,7 +1,7 @@
 
 extern crate libc;
 use libc::*;
-use ofx::core::*;
+use bindings::core::*;
 
 #[repr(C)]
 #[allow(non_snake_case)]

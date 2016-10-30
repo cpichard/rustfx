@@ -1,9 +1,9 @@
 use libc;
-use ofx::property::*;
+use bindings::property::*;
 use rfx::propertyset::*;
 use std::collections::HashMap;
-use ofx::param::*;
-use ofx::core::*;
+use bindings::param::*;
+use bindings::core::*;
 use std::mem;
 use std::ffi::{CString, CStr};
 use std::ops::DerefMut;

@@ -1,9 +1,9 @@
 
 use libc::*;
-use ofx::core::*;
-use ofx::plugin::*;
+use bindings::core::*;
+use bindings::plugin::*;
 use rfx::propertyset::*;
-use ofx::imageeffect::*;
+use bindings::imageeffect::*;
 use rfx::bundle::Bundle;
 use std::collections::HashMap;
 use std::path::PathBuf;

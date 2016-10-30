@@ -1,7 +1,7 @@
 extern crate libc;
 use std::ffi::*;
 use libc::*;
-use ofx::core::*;
+use bindings::core::*;
 
 //
 // OfxCore bindings

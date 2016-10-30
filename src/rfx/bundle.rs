@@ -1,6 +1,6 @@
 use libc::*;
-use ofx::core::*;
-use ofx::plugin::*;
+use bindings::core::*;
+use bindings::plugin::*;
 use std::env;
 use std::ffi::*;
 use std::fs::DirEntry;
