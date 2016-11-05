@@ -63,14 +63,14 @@ impl Bundle {
         // Open the dynamic library
         let c_dll_path = from_str(dll_path.to_str().unwrap());
         unsafe {
-            let plug_dll: *mut c_void = dlopen(c_dll_path, 1);
+            let plug_dll: *mut c_void = dlopen(c_dll_path.as_ptr(), 1);
             if plug_dll.is_null() {
                 let error_message = CStr::from_ptr(dlerror()).to_str().unwrap();
                 let custom_error = io::Error::new(io::ErrorKind::Other, error_message);
                 return Err(custom_error);
             }
             // Look for the function that returns the number of plugins
-            let c_nb_plugins_fun = dlsym(plug_dll, from_str(kOfxGetNumberOfPlugins));
+            let c_nb_plugins_fun = dlsym(plug_dll, from_str(kOfxGetNumberOfPlugins).as_ptr());
             if c_nb_plugins_fun.is_null() {
                 let error_message = format!("unable to find function {}", kOfxGetNumberOfPlugins);
                 let custom_error = io::Error::new(io::ErrorKind::Other, error_message);
@@ -79,7 +79,7 @@ impl Bundle {
             let nb_plugins: extern "C" fn() -> c_uint = mem::transmute(c_nb_plugins_fun);
 
             // Look for the function that returns a structure describing the plugin
-            let c_get_plugin_fun = dlsym(plug_dll, from_str(kOfxGetPlugin));
+            let c_get_plugin_fun = dlsym(plug_dll, from_str(kOfxGetPlugin).as_ptr());
             if c_get_plugin_fun.is_null() {
                 let error_message = format!("unable to find function {}", kOfxGetPlugin);
                 let custom_error = io::Error::new(io::ErrorKind::Other, error_message);
@@ -165,7 +165,8 @@ fn is_ofx_bundle(dir: &io::Result<DirEntry>) -> bool {
 
 
 // TODO: this should be used in a lot of places, so move to a common module
-fn from_str(s: &str) -> *const c_char {
+// This function causes returns dangling pointers
+fn from_str(s: &str) -> CString {
     // TODO: What is the lifetime of the returned pointer ?
-    CString::new(s).unwrap().as_ptr()
+    CString::new(s).unwrap()
 }
