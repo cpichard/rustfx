@@ -8,13 +8,13 @@ use std::mem;
 use std::ffi::{CString, CStr};
 use std::ops::DerefMut;
 
-// TODO: ImageEffectStruct is used for:
+// NOTE: ImageEffectStruct is used for:
 // PluginInstance
 // PluginDescriptor
 pub struct OfxImageEffectStruct {
     props: *mut OfxPropertySet,
     params: *mut OfxParameterSet,
-    clips: HashMap<CString, Box<OfxImageClip>>, 
+    clips: HashMap<CString, Box<OfxImageClip>>,
 }
 
 pub type OfxImageEffectHandle = *mut libc::c_void;
@@ -38,17 +38,16 @@ pub type OfxImageMemoryHandle = *mut libc::c_void;
 
 
 pub struct OfxImageClip {
-// TODO move ImageClip where it belongs and fill with relevant code
-    dummy_data: u32,
+    // TODO move ImageClip where it belongs and fill with relevant code
+    props: Box<OfxPropertySet>,
 }
 
 pub type OfxImageClipHandle = *mut libc::c_void;
 
 impl OfxImageClip {
     pub fn new() -> Self {
-        OfxImageClip {dummy_data: 0}
-    }    
-
+        OfxImageClip { props: OfxPropertySet::new() }
+    }
 }
 
 
@@ -111,29 +110,31 @@ extern "C" fn get_param_set(image_effect_ptr: OfxImageEffectHandle,
     kOfxStatErrBadHandle
 }
 
-/// This function defines a clip to a host, the returned property set is used to describe various aspects of the clip to the host.
+/// This function is used by a plugin to define a clip to a host,
+/// the returned property set is used to describe various aspects of the clip to the host.
 /// Note that this does not create a clip instance.
 /// Arguments
 ///
 /// handle - ImageEffect
 /// name - unique name of the clip to define
 /// propertySet - a property handle for the clip descriptor will be returned here
+/// the property handle returned by this function is purely for definition purposes only
 
 extern "C" fn clip_define(handle: OfxImageEffectHandle,
                           name: *const libc::c_char,
                           props: *mut OfxPropertySetHandle)
                           -> OfxStatus {
     // We need to store a property per clip names per ImageEffectHandle
-    let clip = OfxImageClip::new();
+    if handle.is_null() {
+        panic!("null image effect handle passed in clipDefine function"); 
+    }
     let image_effect: &mut OfxImageEffectStruct = unsafe { mem::transmute(handle) };
-    let clip_properties : &mut OfxPropertySet = unsafe { mem::transmute(props) };
-    let key : CString = unsafe {CStr::from_ptr(name).to_owned()};
-    let value = clip_properties.get(&key, 1);
-    // FIXME: read the key and the different parameters for the clip 
-    image_effect.clips.insert(CString::new("Test").unwrap(), Box::new(clip));
-    let key = CString::new("Test").unwrap();
-    let ptr_props = image_effect.clips.get_mut(&key).unwrap();
-    unsafe { *props = mem::transmute(ptr_props.deref_mut()) };
+    
+    // TODO: check if name is valid
+    let key: CString = unsafe { CStr::from_ptr(name).to_owned() };
+    let mut clip = OfxImageClip::new();
+    unsafe { *props = mem::transmute(clip.props.deref_mut()) };
+    image_effect.clips.insert(key, Box::new(clip));
     kOfxStatOK
 }
 
@@ -142,7 +143,7 @@ extern "C" fn clip_get_handle(handle: OfxImageEffectHandle,
                               clip_handle: *mut OfxImageClipHandle,
                               props: *mut OfxPropertySetHandle)
                               -> OfxStatus {
-    // Get 
+    // Get
     panic!("unimplemented")
 }
 

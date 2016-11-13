@@ -10,7 +10,8 @@ use std::path::PathBuf;
 use std::str;
 use std::ptr;
 
-/// A bundle stores plugins
+/// A bundle stores a shared library
+/// used to creates several different plugins
 #[derive(Debug)]
 pub struct Bundle {
     dll_path: PathBuf,
@@ -20,7 +21,7 @@ pub struct Bundle {
 }
 
 impl Bundle {
-    // Returns a reference of the plugin returned by the library
+    /// Returns a reference of the plugin returned by the library
     pub fn get_plugin(&self, nb: c_uint) -> &mut OfxPlugin {
         let plugin_ptr = (self.c_get_plugin)(nb);
         if !plugin_ptr.is_null() {
@@ -163,10 +164,7 @@ fn is_ofx_bundle(dir: &io::Result<DirEntry>) -> bool {
     }
 }
 
-
-// TODO: this should be used in a lot of places, so move to a common module
-// This function causes returns dangling pointers
+// TODO: this should be used in a lot of places, so move to a common module ?
 fn from_str(s: &str) -> CString {
-    // TODO: What is the lifetime of the returned pointer ?
     CString::new(s).unwrap()
 }
