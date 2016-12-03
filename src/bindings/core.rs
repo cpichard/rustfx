@@ -34,7 +34,7 @@ pub fn clone_keyword<'a>(value: &'a [u8]) -> CString {
     g.to_owned()
 }
 
-///
+/// TODO check it doesn't return a dangling pointer
 pub fn keyword_ptr<'a>(value: &'a [u8]) -> *const c_char {
     let j = unsafe { CStr::from_bytes_with_nul_unchecked(value) };
     j.as_ptr()

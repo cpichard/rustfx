@@ -1,5 +1,7 @@
 
 # Only works on MacOS for now
+all:OFX/basic.ofx.bundle/Contents/MacOS-x86-64/basic.ofx OFX/custom.ofx.bundle/Contents/MacOS-x86-64/custom.ofx OFX/invert.ofx.bundle/Contents/MacOS-x86-64/invert.ofx
+
 
 OFX/basic.ofx.bundle/Contents/MacOS-x86-64/basic.ofx: basic.o
 	g++ -bundle basic.o -o basic.ofx
@@ -8,6 +10,23 @@ OFX/basic.ofx.bundle/Contents/MacOS-x86-64/basic.ofx: basic.o
 
 basic.o: basic.cpp ofxUtilities.hpp
 	g++ -c -g -fvisibility=hidden -fPIC -I../../src/ofx basic.cpp -o basic.o
+
+
+OFX/custom.ofx.bundle/Contents/MacOS-x86-64/custom.ofx: custom.o
+	g++ -bundle -framework OpenGL custom.o -o custom.ofx
+	mkdir -p OFX/custom.ofx.bundle/Contents/MacOS-x86-64/
+	mv custom.ofx $@ 
+
+custom.o: custom.cpp ofxUtilities.hpp
+	g++ -c -g -fvisibility=hidden -fPIC -I../../src/ofx custom.cpp -o custom.o
+
+OFX/invert.ofx.bundle/Contents/MacOS-x86-64/invert.ofx: invert.o
+	g++ -bundle -framework OpenGL invert.o -o invert.ofx
+	mkdir -p OFX/invert.ofx.bundle/Contents/MacOS-x86-64/
+	mv invert.ofx $@ 
+
+invert.o: invert.cpp ofxUtilities.hpp
+	g++ -c -g -fvisibility=hidden -fPIC -I../../src/ofx invert.cpp -o invert.o
 
 clean: 
 	rm *.o

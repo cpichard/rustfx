@@ -133,6 +133,7 @@ impl Engine {
         match found {
             Some(k) => {
                 match self.action_describe_in_context(unsafe { transmute(k) }) {
+                    //TODO : return relevant information for each code path
                     kOfxStatOK => trace!("ok"),//the action was trapped and all was well
                     kOfxStatErrMissingHostFeature => trace!("context ignored"),// in which the context will be ignored by the host, the plugin may post a message
                     kOfxStatErrMemory => trace!("memory error"), //in which case the action may be called again after a memory purge
