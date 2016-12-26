@@ -3,19 +3,17 @@ use libc::*;
 use bindings::core::*;
 use bindings::plugin::*;
 use rfx::propertyset::*;
-use bindings::imageeffect::*;
 use rfx::bundle::Bundle;
+use bindings::imageeffect::*;
 use std::collections::HashMap;
 use std::path::PathBuf;
 use std::mem::transmute;
-use std::ptr;
-use std::ffi::*;
 
 /// Engine contains everything needed to launch a computation
 pub struct Engine {
     ofx_host: *mut OfxHost,
     bundles: Vec<Bundle>,
-    plugins: HashMap<String, *mut OfxPlugin>,
+    plugins: HashMap<String, OfxPlugin>,
 }
 
 impl Engine {
@@ -38,19 +36,20 @@ impl Engine {
             trace!("ofx host properties passed to the plugin {:?}",
                    (*self.ofx_host).host as *const _)
         };
-        let bundles = Bundle::from_paths(paths);
-        for bundle in &bundles {
+        self.bundles = Bundle::from_paths(paths);
+        for bundle in &self.bundles {
             for n in 0..bundle.nb_plugins {
-                let plugin = bundle.get_plugin(n);
+                let mut plugin = bundle.get_plugin(n);
                 // TODO: test for plugin version compatibility
                 // Register the host in the plugin
                 let host_ptr: *mut c_void = unsafe { transmute(self.ofx_host) };
                 (plugin.setHost)(host_ptr);
-                match self.action_load(plugin) {
+                match plugin.action_load() {
                     kOfxStatOK => {
-                        match self.action_describe(plugin) {
+                        match plugin.action_describe() {
                             kOfxStatOK => {
-                                self.plugins.insert(plugin.identifier(), plugin);
+                                let identifier = plugin.identifier();
+                                self.plugins.insert(identifier, plugin);
                             }
                             // TODO handle action describe return
                             _ => error!("plugin can't describe itself"),
@@ -63,67 +62,15 @@ impl Engine {
                 }
             }
         }
-        self.bundles = bundles;
     }
 
-    fn action_load(&mut self, plugin: &OfxPlugin) -> OfxStatus {
-        (plugin.mainEntry)(keyword_ptr(kOfxActionLoad),
-                           ptr::null_mut(),
-                           ptr::null_mut(),
-                           ptr::null_mut())
-    }
-
-    ///
-    fn action_describe(&mut self, plugin: &OfxPlugin) -> OfxStatus {
-        // TODO check the plugin is not keeping this property set
-        let image_effect = OfxImageEffectStruct::new();
-        let plug_desc_ptr: *const c_void = unsafe { transmute(&image_effect) };
-        trace!("plugin description is {:?}", plug_desc_ptr as *const _);
-        (plugin.mainEntry)(keyword_ptr(kOfxActionDescribe),
-                           plug_desc_ptr,
-                           ptr::null_mut(),
-                           ptr::null_mut())
-    }
-
-    fn action_describe_in_context(&mut self, plugin: &OfxPlugin) -> OfxStatus {
-        let image_effect = OfxImageEffectStruct::new(); // This is the context cast as a OfxImageEffectStruct
-        let plug_desc_ptr: *const c_void = unsafe { transmute(&image_effect) };
-        trace!("describe in context with image effect {:?}", plug_desc_ptr as *const _);
-
-        // TODO check the plugin is not keeping this property set
-        let mut prop_set = OfxPropertySet::new();
-        prop_set.insert(clone_keyword(kOfxImageEffectPropContext),
-                        0,
-                        keyword_ptr(kOfxImageEffectContextGeneral));
-
-        (plugin.mainEntry)(keyword_ptr(kOfxImageEffectActionDescribeInContext),
-                           plug_desc_ptr,
-                           properties_ptr(prop_set),
-                           ptr::null_mut())
-    }
 
     #[allow(non_upper_case_globals)]
-    fn action_create_instance(&mut self, plugin: &mut OfxPlugin) -> Option<OfxImageEffectStruct> {
-        // let create_instance_str = CString::new("OfxActionCreateInstance").unwrap();
-        let image_effect = OfxImageEffectStruct::new();
-        let plug_desc_ptr: *const c_void = unsafe { transmute(&image_effect) };
-        trace!("create instance with image effect {:?}", plug_desc_ptr);
-
-        match (plugin.mainEntry)(keyword_ptr(kOfxActionCreateInstance), // create_instance_str.as_ptr(),
-                                 plug_desc_ptr,
-                                 ptr::null_mut(),
-                                 ptr::null_mut()) {
-            kOfxStatOK => Some(image_effect),
-            // TODO catch and handle other returned values
-            _ => None,
-        }
-    }
-    #[allow(non_upper_case_globals)]
-    pub fn node(&mut self, plugin_name: &str) {
-        let found = match self.plugins.get(plugin_name) {
+    pub fn node(&mut self, plugin_name: &str) -> Option<OfxImageEffectStruct> {
+        let found = match self.plugins.get_mut(plugin_name) {
             Some(plugin) => {
                 debug!("found plugin {:?}\n", plugin);
-                Some(*plugin)
+                Some(plugin)
             }
             None => {
                 debug!("plugin {:?} not found", plugin_name);
@@ -131,30 +78,48 @@ impl Engine {
             }
         };
         match found {
-            Some(k) => {
-                match self.action_describe_in_context(unsafe { transmute(k) }) {
-                    //TODO : return relevant information for each code path
-                    kOfxStatOK => trace!("ok"),//the action was trapped and all was well
-                    kOfxStatErrMissingHostFeature => trace!("context ignored"),// in which the context will be ignored by the host, the plugin may post a message
-                    kOfxStatErrMemory => trace!("memory error"), //in which case the action may be called again after a memory purge
-                    kOfxStatFailed => trace!("something went wrong"),//something wrong, but no error code appropriate, plugin to post message
-                    kOfxStatErrFatal | _ => panic!(""),    
+            Some(plugin) => {
+                match plugin.action_describe_in_context() {
+                    // TODO : return relevant information for each code path
+                    kOfxStatOK => {
+                        trace!("describe in context suceeded, able to create a new image effect");
+                        plugin.action_create_instance()
+                    }
+                    // in which the context will be ignored by the host, the plugin may post a message
+                    kOfxStatErrMissingHostFeature => {
+                        trace!("image effect require a feature not");
+                        None
+                    }
+                    kOfxStatErrMemory => {
+                        trace!("memory error"); //in which case the action may be called again after a memory purge
+                        None
+                    }
+                    // something wrong, but no error code appropriate, plugin to post message
+                    kOfxStatFailed => {
+                        trace!("something went wrong in describe in context");
+                        None
+                    }
+                    kOfxStatErrFatal | _ => {
+                        panic!("describe_in_context returned a fatal error");
+                    }
                 }
-                self.action_create_instance(unsafe { transmute(k) });
+                // Create a OfxImageEffect which can be used after
+                // TODO : return a Node ? create a node and store it ?
             }
-            _ => (),
+            _ => None,
         }
     }
 
     fn describe_capabilities() -> Box<OfxPropertySet> {
         let mut properties = OfxPropertySet::new();
+        // TODO : add rustfx capabilities
         properties.insert("OfxImageEffectPropMultipleClipDepths", 0, 0);
         properties
     }
 }
 
-// #[cfg(test)]
-// use rfx::propertyset::*;
+#[cfg(test)]
+use std::ffi::CString;
 
 #[test]
 fn check_properties() {

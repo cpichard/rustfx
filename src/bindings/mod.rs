@@ -12,6 +12,7 @@ pub mod property;
 #[allow(dead_code)]
 pub mod param;
 
+#[allow(non_upper_case_globals)]
 pub mod plugin;
 
 #[allow(unused_variables)]

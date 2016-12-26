@@ -11,7 +11,7 @@ use libc::*;
 pub enum PropertyValue {
     Pointer (* const c_void),
     Integer (c_int),
-    Double (c_double), // TODO: double check it shouldn't be a float
+    Double (c_double), // TODO: double check if it shouldn't be a float
     String(CString),
     Undefined,
 }

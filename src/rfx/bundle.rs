@@ -21,15 +21,22 @@ pub struct Bundle {
 }
 
 impl Bundle {
-    /// Returns a reference of the plugin returned by the library
-    pub fn get_plugin(&self, nb: c_uint) -> &mut OfxPlugin {
-        let plugin_ptr = (self.c_get_plugin)(nb);
+    /// Returns a plugin object returned by the dll
+    pub fn get_plugin(&self, nb: c_uint) -> OfxPlugin {
+        let plugin_ptr = (self.c_get_plugin)(nb) as *mut OfxPlugin;
         if !plugin_ptr.is_null() {
-            unsafe { mem::transmute(plugin_ptr) }
+            // Note: it's not possible to dereference and move out
+            // so we need to clone the returned object/pointer.
+            // No idea if the memory allocated by the plugin is leaked, or
+            // destroyed by the plugin so:
+            // TODO: check memory leak here
+            unsafe { debug!("plugin ptr is {:?}", *plugin_ptr) };
+            unsafe { (*plugin_ptr).clone() }
         } else {
             panic!("plugin pointer is null");
         }
     }
+
     /// Returns a list of found bundles in the bundle_paths
     pub fn from_paths(bundle_paths: Vec<PathBuf>) -> Vec<Bundle> {
 

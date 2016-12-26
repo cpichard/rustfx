@@ -77,12 +77,13 @@ pub struct OfxHost {
     pub fetchSuite: extern "C" fn(OfxPropertySetHandle, *const c_char, c_int) -> *mut c_void,
 }
 
-// impl Drop for OfxHost {
-//
-//    fn drop( & mut self ) {
-//        println!("Dropping host");
-//    }
-// }
+#[cfg(debug)]
+impl Drop for OfxHost {
+
+    fn drop( & mut self ) {
+        println!("Dropping host");
+    }
+}
 
 /// returns the static suite or null if the suite wasn't found
 #[allow(unused_variables)] // FIXME => handle the version of the returned suite
@@ -105,7 +106,7 @@ extern "C" fn fetch_suite(host: OfxPropertySetHandle,
         _ => {
             let suite_cstr = unsafe { CStr::from_ptr(suite_name) };
             let suite_str = suite_cstr.to_str().unwrap();
-            error!("plugin is asking for an unimplemented suite : {}",
+            error!("plugin is asking for unimplemented suite {}",
                    suite_str);
             ptr::null_mut() as *mut c_void
         }

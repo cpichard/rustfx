@@ -2,7 +2,7 @@
 extern crate log;
 extern crate env_logger;
 extern crate rustfx;
-use rustfx::rfx::engine::*;
+use rustfx::rfx::project::*;
 use rustfx::rfx::bundle::*;
 
 fn main() {
@@ -11,15 +11,19 @@ fn main() {
     trace!("Initializing rustfx");
 
     // Get env OFX and list all the plugins specified in the path
+    let mut project = Project::new();
     let bundle_paths = default_bundle_paths();
-    // Start an engine with those plugins
-    //println!("Starting engine");
-    let mut engine = Engine::new();
-    engine.load_plugins(bundle_paths);
-    //engine.load_script("test.rfx");
+    project.load_plugins(bundle_paths); // project.load_plugins() ??
 
     // Load project, graph of effects
-    engine.node("Test"); // not found
-    engine.node("tuttle.checkerboard"); // not found
-    engine.node("uk.co.thefoundry.BasicGainPlugin");
+    let test_node = project.new_node("Test"); // not found
+    let checkerboard = project.new_node("tuttle.checkerboard"); // not found
+    let gain_plugin = project.new_node("uk.co.thefoundry.BasicGainPlugin");
+
+    project.set_value(&gain_plugin, "gain".to_string(), 10);
+    
+    let gain_input = project.get_input(&gain_plugin, "Source");
+    let checkerboard_output = project.get_output(&checkerboard);
+    project.connect(&checkerboard, &gain_plugin, &gain_input);
+
 }

@@ -11,6 +11,7 @@ use std::ops::DerefMut;
 // NOTE: ImageEffectStruct is used for:
 // PluginInstance
 // PluginDescriptor
+// It's like a Node
 pub struct OfxImageEffectStruct {
     props: *mut OfxPropertySet,
     params: *mut OfxParameterSet,
@@ -126,10 +127,10 @@ extern "C" fn clip_define(handle: OfxImageEffectHandle,
                           -> OfxStatus {
     // We need to store a property per clip names per ImageEffectHandle
     if handle.is_null() {
-        panic!("null image effect handle passed in clipDefine function"); 
+        panic!("null image effect handle passed in clipDefine function");
     }
     let image_effect: &mut OfxImageEffectStruct = unsafe { mem::transmute(handle) };
-    
+
     // TODO: check if name is valid
     let key: CString = unsafe { CStr::from_ptr(name).to_owned() };
     let mut clip = OfxImageClip::new();
