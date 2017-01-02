@@ -22,8 +22,8 @@ fn main() {
 
     project.set_value(&gain_plugin, "gain".to_string(), 10);
     
-    let gain_input = project.get_input(&gain_plugin, "Source");
-    let checkerboard_output = project.get_output(&checkerboard);
+    let gain_input = project.get_input(&gain_plugin, &"Source".to_string());
+    //let checkerboard_output = project.get_output(&checkerboard);
     project.connect(&checkerboard, &gain_plugin, &gain_input);
 
 }

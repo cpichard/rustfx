@@ -7,8 +7,8 @@ use std::path::PathBuf;
 use std::collections::HashMap;
 
 pub type Node = OfxImageEffectStruct;
-pub type NodeHandle = Option<String>;
-pub type ClipHandle = Option<String>;
+pub type NodeHandle = String;
+pub type ClipHandle = String;
 // Output Node, Input node, Input clip
 pub type NodeInput = (NodeHandle, ClipHandle);
 pub type NodeOutput = NodeHandle;
@@ -45,7 +45,7 @@ impl Project {
     // NodeHandle : change Option<String> to String
     // if the node can't be created by the plugin,
     // create a dummy placeholder node
-    pub fn new_node(&mut self, plugin_name: &str) -> NodeHandle {
+    pub fn new_node(&mut self, plugin_name: &str) -> Option<NodeHandle> {
 
         let new_node = self.engine.node(plugin_name);
         match new_node {
@@ -59,9 +59,9 @@ impl Project {
         }
     }
 
-    pub fn set_value(&mut self, node_handle: &NodeHandle, param_name: String, value: i32) {}
+    pub fn set_value(&mut self, node_handle: &Option<NodeHandle>, param_name: String, value: i32) {}
 
-    pub fn get_input(& self, node_handle: &NodeHandle, clip_name: &String) -> ClipHandle {
+    pub fn get_input(& self, node_handle: &Option<NodeHandle>, clip_name: &String) -> Option<ClipHandle> {
         None 
     }
 
@@ -75,11 +75,18 @@ impl Project {
     }
 
     pub fn connect(&mut self,
-                   in_node: &NodeHandle,
-                   out_node: &NodeHandle,
-                   out_clip: &ClipHandle) {
+                   in_node: &Option<NodeHandle>,
+                   out_node: &Option<NodeHandle>,
+                   out_clip: &Option<ClipHandle>) {
         // TODO check connection validity
-        self.connections.entry( in_node.clone() ).or_insert(Vec::new()).push( (out_node.clone(), out_clip.clone()) );
+        match (in_node, out_node, out_clip) {
+            (&Some(ref node_in), &Some(ref node_out), &Some(ref clip_out)) 
+                => {
+                    println!("test");
+                    self.connections.entry( node_in.clone() ).or_insert(Vec::new()).push( (node_out.clone(), clip_out.clone()) );
+                }
+            _ => println!("bb"),
+        }
     }
     // pub fn save_project(project: Project) {
     // }
