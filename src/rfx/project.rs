@@ -3,8 +3,10 @@
 ///
 use bindings::imageeffect::*;
 use rfx::engine::*;
+use rfx::rfxfileformat::RfxFileFormat;
 use std::path::PathBuf;
 use std::collections::HashMap;
+use std::fs::File;
 
 pub type Node = OfxImageEffectStruct;
 pub type NodeHandle = String;
@@ -47,30 +49,43 @@ impl Project {
     // create a dummy placeholder node
     pub fn new_node(&mut self, plugin_name: &str) -> Option<NodeHandle> {
 
-        let new_node = self.engine.node(plugin_name);
-        match new_node {
+        let node_created = self.engine.node(plugin_name);
+        match node_created {
             Some(node) => {
                 // TODO: Make sure the key is not taken yet
                 // this should raise an error
-                self.nodes.insert("test_node".to_string(), node);
-                Some("test_node".to_string())
+                // This should return a unique name
+                self.nodes.insert(plugin_name.to_string(), node);
+                Some(plugin_name.to_string())
             }
-            None => None, // Might give some logs ?
+            None => {
+                // Creates an empty node // dummy node 
+                Some(plugin_name.to_string())
+            }
         }
     }
 
     pub fn set_value(&mut self, node_handle: &Option<NodeHandle>, param_name: String, value: i32) {}
 
-    pub fn get_input(& self, node_handle: &Option<NodeHandle>, clip_name: &String) -> Option<ClipHandle> {
-        None 
+    pub fn get_input(&self,
+                     node_handle: &Option<NodeHandle>,
+                     clip_name: &String)
+                     -> Option<ClipHandle> {
+        None
     }
 
     pub fn load_project(file_name: PathBuf) -> Project {
         // Read a file and re-construct a Project
-        Project {
-            nodes: HashMap::new(),
-            connections: HashMap::new(),
-            engine: Engine::new(),
+        // Open file
+        match File::open(file_name) {
+            Ok(file) => {
+                let mut project = Project::new();
+                let mut parser = RfxFileFormat::new(&file);
+                parser.update(project)
+            }
+            Err(e) => {
+                panic!("unable to load file {}", e);
+            }
         }
     }
 
@@ -80,11 +95,13 @@ impl Project {
                    out_clip: &Option<ClipHandle>) {
         // TODO check connection validity
         match (in_node, out_node, out_clip) {
-            (&Some(ref node_in), &Some(ref node_out), &Some(ref clip_out)) 
-                => {
-                    println!("test");
-                    self.connections.entry( node_in.clone() ).or_insert(Vec::new()).push( (node_out.clone(), clip_out.clone()) );
-                }
+            (&Some(ref node_in), &Some(ref node_out), &Some(ref clip_out)) => {
+                println!("test");
+                self.connections
+                    .entry(node_in.clone())
+                    .or_insert(Vec::new())
+                    .push((node_out.clone(), clip_out.clone()));
+            }
             _ => println!("bb"),
         }
     }
