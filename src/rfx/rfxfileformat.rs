@@ -48,7 +48,7 @@ impl<'a> RfxFileFormat<'a> {
             let plugins = Vec::new();
             project.load_plugins(plugins);
         } else if self.current_line.starts_with("#") {
-            // Comment
+            // Comment next line
         } else {
             panic!("Unrecognized token {}", self.current_line);
         }
@@ -56,26 +56,39 @@ impl<'a> RfxFileFormat<'a> {
 
     fn parse_add_node_cmd(&mut self, project: &mut Project) {
         // Read node type
-        //let (_, node_type) = self.current_line.split_at(5); // replace by sizeof("node") + 1 ?
-        let mut node_created = project.new_node(self.current_line.split_at(5).1);
+        let mut node_created: Option<NodeHandle> = None;
+        {
+            let (_, node_type) = self.current_line.split_at(5); // replace by sizeof("node") + 1 ?
+            let node_created = project.new_node(node_type);
+        }
+
         match node_created {
             Some(node) => {
                 // Read node parameters
-                self.next();
-                if self.current_line.starts_with(" ") {
-                    self.parse_node_parameters(project, node);
-                }
+                self.parse_node_parameters(project, node)
             }
             None => {
-                panic!("unable to create node {}", self.current_line.split_at(5).1);
+                let (_, node_type) = self.current_line.split_at(5); // replace by sizeof("node") + 1 ?
+                panic!("unable to create node {}", node_type);
             }
         }
     }
 
-    fn parse_node_parameters(&mut self, project: &mut Project, node : NodeHandle) {
-        let key_value: Vec<&str> = self.current_line.trim_left().split(' ').collect();
-        // 
-        project.set_value(&Some(node), key_value[0].to_string(), key_value[1].to_string());
+    fn parse_node_parameters(&mut self, project: &mut Project, node: NodeHandle) {
+        // should start with a space
+        // count number of spaces ?
+        if self.current_line.starts_with(" ") {
+            // grab the parameter name
+            // and its value
+            let mut words = self.current_line.trim().split_whitespace();
+            let key = words.nth(0);
+            let value = words.nth(1);
+            match (key, value) {
+                (Some(k), Some(v)) => project.set_value(Some(node), k.to_string(), v.to_string()), // TODO remove 67
+                (_, _) => panic!("unrecognized line"),
+            }
+
+        }
     }
 }
 
@@ -97,7 +110,6 @@ fn parse_one_node() {
             // read one node ?
             assert!(project.nb_nodes() == 1);
             // get node and get its value
-            project.
         } 
         Err(_) => {
             panic!("unable to open {:?}", &path);

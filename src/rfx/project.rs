@@ -1,6 +1,6 @@
 ///
 /// a Project contains the graph of processing nodes
-///
+
 use bindings::imageeffect::*;
 use rfx::engine::*;
 use rfx::rfxfileformat::RfxFileFormat;
@@ -97,7 +97,6 @@ impl Project {
             }
         }
     }
-
     pub fn connect(&mut self,
                    in_node: &Option<NodeHandle>,
                    out_node: &Option<NodeHandle>,
