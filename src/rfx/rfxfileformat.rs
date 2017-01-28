@@ -1,9 +1,9 @@
 use std::fs::File;
 use rfx::project::Project;
+use rfx::project::NodeHandle;
 use std::io::BufRead;
 use std::io::BufReader;
 use std::io::Error;
-
 
 // Stores temporary parsing data
 pub struct RfxFileFormat<'a> {
@@ -56,17 +56,26 @@ impl<'a> RfxFileFormat<'a> {
 
     fn parse_add_node_cmd(&mut self, project: &mut Project) {
         // Read node type
-        let (_, node_type) = self.current_line.split_at(5); // replace by sizeof("node") + 1 ?
-        let node_created = project.new_node(node_type);
+        //let (_, node_type) = self.current_line.split_at(5); // replace by sizeof("node") + 1 ?
+        let mut node_created = project.new_node(self.current_line.split_at(5).1);
         match node_created {
             Some(node) => {
                 // Read node parameters
-                // self.parse_node_parameters()
+                self.next();
+                if self.current_line.starts_with(" ") {
+                    self.parse_node_parameters(project, node);
+                }
             }
             None => {
-                panic!("unable to create node {}", node_type);
+                panic!("unable to create node {}", self.current_line.split_at(5).1);
             }
         }
+    }
+
+    fn parse_node_parameters(&mut self, project: &mut Project, node : NodeHandle) {
+        let key_value: Vec<&str> = self.current_line.trim_left().split(' ').collect();
+        // 
+        project.set_value(&Some(node), key_value[0].to_string(), key_value[1].to_string());
     }
 }
 
@@ -84,8 +93,11 @@ fn parse_one_node() {
         Ok(file) => {
             let mut project = Project::new();
             let mut parser = RfxFileFormat::new(&file);
-            parser.update(project);
-            assert!(true); // Test something meaningfull
+            project = parser.update(project);
+            // read one node ?
+            assert!(project.nb_nodes() == 1);
+            // get node and get its value
+            project.
         } 
         Err(_) => {
             panic!("unable to open {:?}", &path);

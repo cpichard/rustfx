@@ -30,7 +30,7 @@ pub struct Project {
     engine: Engine,
 }
 
-/// This is the base API object
+/// This is the principal "API" object exposed to the rest of the world
 impl Project {
     pub fn new() -> Project {
         Project {
@@ -49,6 +49,7 @@ impl Project {
     // create a dummy placeholder node
     pub fn new_node(&mut self, plugin_name: &str) -> Option<NodeHandle> {
 
+        // Try to create a node using the plugins
         let node_created = self.engine.node(plugin_name);
         match node_created {
             Some(node) => {
@@ -59,13 +60,21 @@ impl Project {
                 Some(plugin_name.to_string())
             }
             None => {
-                // Creates an empty node // dummy node 
+                // Creates an empty node // dummy node
+                // TODO: flag the node as being "pluginless"
+                let node = Node::new();
+                warn!("no plugin found for node xxx");
+                self.nodes.insert(plugin_name.to_string(), node);
                 Some(plugin_name.to_string())
             }
         }
     }
 
-    pub fn set_value(&mut self, node_handle: &Option<NodeHandle>, param_name: String, value: i32) {}
+    pub fn set_value(&mut self,
+                     node_handle: &Option<NodeHandle>,
+                     param_name: String,
+                     param_value: String) {
+    }
 
     pub fn get_input(&self,
                      node_handle: &Option<NodeHandle>,
@@ -102,8 +111,11 @@ impl Project {
                     .or_insert(Vec::new())
                     .push((node_out.clone(), clip_out.clone()));
             }
-            _ => println!("bb"),
+            _ => println!("bb"), // TODO panic or warn ????
         }
+    }
+    pub fn nb_nodes(&self) -> usize {
+        self.nodes.len()
     }
     // pub fn save_project(project: Project) {
     // }

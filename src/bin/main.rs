@@ -20,7 +20,7 @@ fn main() {
     let checkerboard = project.new_node("tuttle.checkerboard"); // not found
     let gain_plugin = project.new_node("uk.co.thefoundry.BasicGainPlugin");
 
-    project.set_value(&gain_plugin, "gain".to_string(), 10);
+    project.set_value(&gain_plugin, "gain".to_string(), "10".to_string());
     
     let gain_input = project.get_input(&gain_plugin, &"Source".to_string());
     //let checkerboard_output = project.get_output(&checkerboard);
