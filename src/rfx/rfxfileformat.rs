@@ -1,5 +1,6 @@
 use std::fs::File;
 use rfx::project::Project;
+use rfx::project::NodeHandle;
 use std::io::BufRead;
 use std::io::BufReader;
 use std::io::Error;
@@ -48,7 +49,7 @@ impl<'a> RfxFileFormat<'a> {
             let plugins = Vec::new();
             project.load_plugins(plugins);
         } else if self.current_line.starts_with("#") {
-            // Comment
+            // Comment next line
         } else {
             panic!("Unrecognized token {}", self.current_line);
         }
@@ -56,16 +57,37 @@ impl<'a> RfxFileFormat<'a> {
 
     fn parse_add_node_cmd(&mut self, project: &mut Project) {
         // Read node type
-        let (_, node_type) = self.current_line.split_at(5); // replace by sizeof("node") + 1 ?
-        let node_created = project.new_node(node_type);
+        let mut node_created: Option<NodeHandle> = None;
+        {
+            let (_, node_type) = self.current_line.split_at(5); // replace by sizeof("node") + 1 ?
+            let node_created = project.new_node(node_type);
+        }
+
         match node_created {
             Some(node) => {
                 // Read node parameters
-                // self.parse_node_parameters()
+                self.parse_node_parameters(project, node)
             }
             None => {
+                let (_, node_type) = self.current_line.split_at(5); // replace by sizeof("node") + 1 ?
                 panic!("unable to create node {}", node_type);
             }
+        }
+    }
+    fn parse_node_parameters(&mut self, project: &mut Project, node: NodeHandle) {
+        // should start with a space
+        // count number of spaces ?
+        if self.current_line.starts_with(" ") {
+            // grab the parameter name
+            // and its value
+            let mut words = self.current_line.trim().split_whitespace();
+            let key = words.nth(0);
+            let value = words.nth(1);
+            match (key, value) {
+                (Some(k), Some(v)) => project.set_value(Some(node), k.to_string(), v.to_string()), // TODO remove 67
+                (_, _) => panic!("unrecognized line"),
+            }
+
         }
     }
 }

@@ -1,6 +1,6 @@
 ///
 /// a Project contains the graph of processing nodes
-///
+
 use bindings::imageeffect::*;
 use rfx::engine::*;
 use rfx::rfxfileformat::RfxFileFormat;
@@ -59,13 +59,16 @@ impl Project {
                 Some(plugin_name.to_string())
             }
             None => {
-                // Creates an empty node // dummy node 
+                // Creates an empty node // dummy node
                 Some(plugin_name.to_string())
             }
         }
     }
 
-    pub fn set_value(&mut self, node_handle: &Option<NodeHandle>, param_name: String, value: i32) {}
+    pub fn set_value(&mut self, node_handle: Option<NodeHandle>, param_name: String, value: String) {
+        
+        
+        }
 
     pub fn get_input(&self,
                      node_handle: &Option<NodeHandle>,
@@ -88,7 +91,6 @@ impl Project {
             }
         }
     }
-
     pub fn connect(&mut self,
                    in_node: &Option<NodeHandle>,
                    out_node: &Option<NodeHandle>,
