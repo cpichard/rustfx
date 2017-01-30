@@ -1,5 +1,6 @@
 ///
 /// a Project contains the graph of processing nodes
+///
 
 use bindings::imageeffect::*;
 use rfx::engine::*;
@@ -30,7 +31,8 @@ pub struct Project {
     engine: Engine,
 }
 
-/// This is the principal "API" object exposed to the rest of the world
+/// This would the principal "API" object exposed 
+/// with simple function like load_project
 impl Project {
     pub fn new() -> Project {
         Project {
@@ -50,19 +52,21 @@ impl Project {
     pub fn new_node(&mut self, plugin_name: &str) -> Option<NodeHandle> {
 
         // Try to create a node using the plugins
-        let node_created = self.engine.node(plugin_name);
-        match node_created {
-            Some(node) => {
+        let engine_returned = self.engine.image_effect(plugin_name);
+        match engine_returned {
+            Some(ofx_image_effect) => {
                 // TODO: Make sure the key is not taken yet
-                // this should raise an error
-                // This should return a unique name
-                self.nodes.insert(plugin_name.to_string(), node);
+                // otherwise raise an error
+                // TODO: This should return a unique name
+                println!("found image effect");
+                self.nodes.insert(plugin_name.to_string(), ofx_image_effect);
                 Some(plugin_name.to_string())
             }
             None => {
                 // Creates an empty node // dummy node
                 // TODO: flag the node as being "pluginless"
                 let node = Node::new();
+                println!("not found image effect {}", plugin_name);
                 warn!("no plugin found for node xxx");
                 self.nodes.insert(plugin_name.to_string(), node);
                 Some(plugin_name.to_string())
@@ -74,12 +78,15 @@ impl Project {
                      node_handle: &Option<NodeHandle>,
                      param_name: String,
                      param_value: String) {
+        // DEBUGGING 
+        format!("Set values {:} {:}", param_name, param_value);
     }
 
     pub fn get_input(&self,
                      node_handle: &Option<NodeHandle>,
                      clip_name: &String)
                      -> Option<ClipHandle> {
+
         None
     }
 

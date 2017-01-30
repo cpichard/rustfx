@@ -58,6 +58,7 @@ impl OfxPlugin {
     // it may need and is also when the plug-in should fetch suites from the host.
     // This action will not be called again while the binary containing the plug-in remains loaded.
     pub fn action_load(&self) -> OfxStatus {
+        trace!("action load");
         (self.mainEntry)(keyword_ptr(kOfxActionLoad),
                          ptr::null_mut(),
                          ptr::null_mut(),
@@ -68,10 +69,7 @@ impl OfxPlugin {
     // Note that the handle passed in acts as a descriptor for, rather than an instance of the
     // plugin. The handle is global and unique. The plug-in is at liberty to cache the handle away
     // for future reference until the plug-in is unloaded.
-    pub fn action_describe(&mut self) -> OfxStatus {
-        // TODO check the plugin is not keeping this property set
-        let plugin_descriptor = OfxImageEffectStruct::new();
-        let plug_desc_ptr: *const c_void = unsafe { transmute(&plugin_descriptor) };
+    pub fn action_describe(&mut self, plug_desc_ptr : *const c_void) -> OfxStatus {
         trace!("plugin descriptor is {:?}", plug_desc_ptr as *const _);
         (self.mainEntry)(keyword_ptr(kOfxActionDescribe),
                          plug_desc_ptr, // check plug_desc_ptr is not needed after this call
@@ -87,17 +85,17 @@ impl OfxPlugin {
     // This action will be called multiple times, one for each of the contexts the plugin says it
     // is capable of implementing. If a host does not support a certain context, then it need not
     // call kOfxImageEffectActionDescribeInContext for that context.
-    pub fn action_describe_in_context(&mut self) -> OfxStatus {
-        let image_effect = OfxImageEffectStruct::new(); // This is the context cast as a OfxImageEffectStruct
-        let plug_desc_ptr: *const c_void = unsafe { transmute(&image_effect) };
+    pub fn action_describe_in_context(&mut self, plug_desc_ptr : *const c_void) -> OfxStatus {
         trace!("describe in context with image effect {:?}",
                plug_desc_ptr as *const _);
 
-        // TODO check the plugin is not keeping this property set
+        // Set the context for the plugin
         let mut prop_set = OfxPropertySet::new();
         prop_set.insert(clone_keyword(kOfxImageEffectPropContext),
                         0,
                         keyword_ptr(kOfxImageEffectContextGeneral));
+        // TODO check the plugin is not keeping this property set as it will
+        // surely be detroyed after this function returns
 
         (self.mainEntry)(keyword_ptr(kOfxImageEffectActionDescribeInContext),
                          plug_desc_ptr,
@@ -109,23 +107,16 @@ impl OfxPlugin {
     // creation. It is there to allow a plugin to create any per-instance data structures it may
     // need.
     // kOfxActionDescribe has been called
-    // the instance is fully constructed, with all objects requested in the describe actions (eg,
+    // The instance is fully constructed, with all objects requested in the describe actions (eg,
     // parameters and clips) have been constructed and have had their initial values set. This
     // means that if the values are being loaded from an old setup, that load should have taken
     // place before the create instance action is called.
-    pub fn action_create_instance(&mut self) -> Option<OfxImageEffectStruct> {
-        let image_effect = OfxImageEffectStruct::new();
-        let plug_desc_ptr: *const c_void = unsafe { transmute(&image_effect) };
-        trace!("create instance with image effect {:?}", plug_desc_ptr);
-
-        match (self.mainEntry)(keyword_ptr(kOfxActionCreateInstance), // create_instance_str.as_ptr(),
+    pub fn action_create_instance(&mut self, plug_desc_ptr : *const c_void ) -> OfxStatus {
+        trace!("action_create_instance called {:?}", plug_desc_ptr);
+        (self.mainEntry)(keyword_ptr(kOfxActionCreateInstance), // create_instance_str.as_ptr(),
                                plug_desc_ptr,
                                ptr::null_mut(),
-                               ptr::null_mut()) {
-            kOfxStatOK => Some(image_effect),
-            // TODO catch and handle other returned values
-            _ => None,
-        }
+                               ptr::null_mut()) 
     }
 }
 

@@ -15,15 +15,16 @@ fn main() {
     let bundle_paths = default_bundle_paths();
     project.load_plugins(bundle_paths); // project.load_plugins() ??
 
-    // Load project, graph of effects
-    let test_node = project.new_node("Test"); // not found
-    let checkerboard = project.new_node("tuttle.checkerboard"); // not found
-    let gain_plugin = project.new_node("uk.co.thefoundry.BasicGainPlugin");
 
-    project.set_value(&gain_plugin, "gain".to_string(), "10".to_string());
+    // Load project, graph of effects
+    //let test_node = project.new_node("Test"); // not found
+    //let checkerboard = project.new_node("tuttle.checkerboard"); // not found
+    //let gain_plugin = project.new_node("uk.co.thefoundry.BasicGainPlugin");
+
+    //project.set_value(&gain_plugin, "gain".to_string(), "10".to_string());
     
-    let gain_input = project.get_input(&gain_plugin, &"Source".to_string());
+    //let gain_input = project.get_input(&gain_plugin, &"Source".to_string());
     //let checkerboard_output = project.get_output(&checkerboard);
-    project.connect(&checkerboard, &gain_plugin, &gain_input);
+   // project.connect(&checkerboard, &gain_plugin, &gain_input);
 
 }

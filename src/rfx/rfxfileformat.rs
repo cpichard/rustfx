@@ -9,6 +9,7 @@ use std::io::Error;
 pub struct RfxFileFormat<'a> {
     reader: BufReader<&'a File>,
     current_line: String,
+    line_bytes: usize,
 }
 
 impl<'a> RfxFileFormat<'a> {
@@ -17,6 +18,7 @@ impl<'a> RfxFileFormat<'a> {
         RfxFileFormat {
             reader: BufReader::new(file),
             current_line: String::with_capacity(1024),
+            line_bytes: 0,
         }
     }
 
@@ -27,6 +29,7 @@ impl<'a> RfxFileFormat<'a> {
             if bytes == 0 {
                 return project;
             }
+            self.line_bytes = bytes;
             self.parse_top_level(&mut project);
         }
         project
@@ -56,11 +59,10 @@ impl<'a> RfxFileFormat<'a> {
 
     fn parse_add_node_cmd(&mut self, project: &mut Project) {
         // Read node type
-        let mut node_created: Option<NodeHandle> = None;
-        {
-            let (_, node_type) = self.current_line.split_at(5); // replace by sizeof("node") + 1 ?
-            let node_created = project.new_node(node_type);
-        }
+        let mut node_created: Option<NodeHandle> = {
+            let plugin_name = unsafe { self.current_line.slice_unchecked("node".len()+1, self.current_line.len()-1)};
+            project.new_node(plugin_name)
+        };
 
         match node_created {
             Some(node) => {
@@ -68,8 +70,8 @@ impl<'a> RfxFileFormat<'a> {
                 self.parse_node_parameters(project, node)
             }
             None => {
-                let (_, node_type) = self.current_line.split_at(5); // replace by sizeof("node") + 1 ?
-                panic!("unable to create node {}", node_type);
+        //        let (_, node_type) = self.current_line.split_at(5); // replace by sizeof("node") + 1 ?
+        //        panic!("unable to create node {}", node_type);
             }
         }
     }
@@ -78,13 +80,17 @@ impl<'a> RfxFileFormat<'a> {
         // should start with a space
         // count number of spaces ?
         if self.current_line.starts_with(" ") {
+            // TODO check next character is not a space
             // grab the parameter name
             // and its value
             let mut words = self.current_line.trim().split_whitespace();
             let key = words.nth(0);
             let value = words.nth(1);
             match (key, value) {
-                (Some(k), Some(v)) => project.set_value(Some(node), k.to_string(), v.to_string()), // TODO remove 67
+                (Some(k), Some(v)) => {
+                    let some_node = Some(node);
+                    project.set_value(&some_node, k.to_string(), v.to_string())
+                }
                 (_, _) => panic!("unrecognized line"),
             }
 
@@ -108,6 +114,7 @@ fn parse_one_node() {
             let mut parser = RfxFileFormat::new(&file);
             project = parser.update(project);
             // read one node ?
+            println!("NB NODES: {}", project.nb_nodes());
             assert!(project.nb_nodes() == 1);
             // get node and get its value
         } 

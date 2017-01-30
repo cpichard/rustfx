@@ -70,6 +70,10 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 template <class T> inline T Maximum(T a, T b) {return a > b ? a : b;}
 template <class T> inline T Minimum(T a, T b) {return a < b ? a : b;}
 
+
+// TODO: write wrappers for trace!() debug!() info!()
+
+
 // pointers64 to various bits of the host
 OfxHost                 *gHost;
 OfxImageEffectSuiteV1 *gEffectHost = 0;
@@ -173,6 +177,7 @@ setPerComponentScaleEnabledness( OfxImageEffectHandle effect)
 static OfxStatus
 onLoad(void)
 {
+  printf("onLoad() returning %d\n", kOfxStatOK);
   return kOfxStatOK;
 }
 
@@ -187,6 +192,7 @@ onUnLoad(void)
 static OfxStatus
 createInstance( OfxImageEffectHandle effect)
 {
+  printf("basic.cpp: createInstance called\n");
   // get a pointer to the effect properties
   OfxPropertySetHandle effectProps;
   gEffectHost->getPropertySet(effect, &effectProps);
@@ -212,9 +218,11 @@ createInstance( OfxImageEffectHandle effect)
   gParamHost->paramGetHandle(paramSet, "scaleA", &myData->scaleAParam, 0);
 
   // cache away out clip handles
+  printf("basic.cpp:clipGetClipHandle\n"); 
   gEffectHost->clipGetHandle(effect, kOfxImageEffectSimpleSourceClipName, &myData->sourceClip, 0);
   gEffectHost->clipGetHandle(effect, kOfxImageEffectOutputClipName, &myData->outputClip, 0);
-  
+  printf("basic.cpp:clipGetClipHandle returned\n"); 
+
   if(myData->isGeneralEffect) {
     gEffectHost->clipGetHandle(effect, "Mask", &myData->maskClip, 0);
   }
@@ -222,7 +230,9 @@ createInstance( OfxImageEffectHandle effect)
     myData->maskClip = 0;
 
   // set my private instance data
+  printf("describe in context set pointer\n"); 
   gPropHost->propSetPointer(effectProps, kOfxPropInstanceData, 0, (void *) myData);
+  printf("describe in context returned from set pointer\n"); 
 
   // As the parameters values have already been loaded, set 
   // the enabledness of the per component scale values

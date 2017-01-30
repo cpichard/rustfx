@@ -13,7 +13,7 @@ use std::mem::transmute;
 pub struct Engine {
     ofx_host: *mut OfxHost,
     bundles: Vec<Bundle>,
-    plugins: HashMap<String, OfxPlugin>,
+    plugins: HashMap<String, (OfxPlugin, OfxImageEffectStruct)>,
 }
 
 impl Engine {
@@ -31,9 +31,9 @@ impl Engine {
     // TODO: load_plugin should be update_plugin instead
     #[allow(non_upper_case_globals)]
     pub fn load_plugins(&mut self, paths: Vec<PathBuf>) {
-        trace!("ofx host passed to the plugin {:?}",
-               self.ofx_host as *const _);
         unsafe {
+            trace!("ofx host passed to the plugin {:?}",
+                   self.ofx_host as *const _);
             trace!("ofx host properties passed to the plugin {:?}",
                    (*self.ofx_host).host as *const _)
         };
@@ -45,19 +45,27 @@ impl Engine {
                 // Register the host in the plugin
                 let host_ptr: *mut c_void = unsafe { transmute(self.ofx_host) };
                 (plugin.setHost)(host_ptr);
+                trace!("plugin.action_load()");
                 match plugin.action_load() {
-                    kOfxStatOK => {
-                        match plugin.action_describe() {
+                    kOfxStatOK | kOfxStatReplyDefault => {
+                        trace!("action_load returned kOfxStatOk or kOfxStatReplyDefault");
+                        let plugin_desc = OfxImageEffectStruct::new();
+                        let plug_desc_ptr: *const c_void = unsafe { transmute(&plugin_desc) };
+                        // todo : store information returned by the plugin, like clips and
+                        // parameters. Also store image_effect to avoid having it destroyed 
+                        // 
+                        //
+                        match plugin.action_describe(plug_desc_ptr) {
                             kOfxStatOK => {
                                 let identifier = plugin.identifier();
-                                self.plugins.insert(identifier, plugin);
+                                trace!("inserting new plugin identifier {}", identifier);
+                                self.plugins.insert(identifier, (plugin, plugin_desc));
                             }
                             // TODO handle action describe return
                             _ => error!("plugin can't describe itself"),
                         }
                     }
-                    kOfxStatReplyDefault => println!("load plugin returned kOfxStatReplyDefault "),
-                    kOfxStatFailed => println!("load plugin returned kOfxStatFailed "),
+                    kOfxStatFailed => error!("load plugin returned kOfxStatFailed "),
                     kOfxStatErrFatal => panic!("plugins raised a fatal error"),
                     _ => error!("load action returned unhandled error code"),
                 }
@@ -67,45 +75,56 @@ impl Engine {
 
 
     #[allow(non_upper_case_globals)]
-    pub fn node(&mut self, plugin_name: &str) -> Option<OfxImageEffectStruct> {
+    pub fn image_effect(&mut self, plugin_name: &str) -> Option<OfxImageEffectStruct> {
+        trace!("image_effect creating OfxImageEffectStruct");
         let found = match self.plugins.get_mut(plugin_name) {
-            Some(plugin) => {
-                debug!("found plugin {:?}\n", plugin);
+            Some( plugin ) => {
+                debug!("image_effect found plugin {:?}\n", plugin.0);
                 Some(plugin)
             }
             None => {
-                debug!("plugin {:?} not found", plugin_name);
+                debug!("image_effect plugin {:?} not found", plugin_name);
                 None
             }
         };
         match found {
-            Some(plugin) => {
-                match plugin.action_describe_in_context() {
+            Some(plugin_info) => {
+                // Extract plugin struct and parameters/clips from tuple
+                let ref mut plugin = plugin_info.0;
+                let ref mut description = plugin_info.1;
+                // Clone parameters to a new image effect, this is now 
+                // an "instance"
+                let image_effect = description.clone();
+                let instance_ptr: *const c_void = unsafe { transmute(&image_effect) };
+                trace!("about to call plugin.action_describe_in_context");
+                // TODO: does action describe in context need an instance or an effect
+                match plugin.action_describe_in_context(instance_ptr) {
                     // TODO : return relevant information for each code path
                     kOfxStatOK => {
                         trace!("describe in context suceeded, able to create a new image effect");
-                        plugin.action_create_instance()
+                        // TODO handle status returned from create instance
+                        plugin.action_create_instance(instance_ptr);
+                        Some(image_effect)
                     }
                     // in which the context will be ignored by the host, the plugin may post a message
                     kOfxStatErrMissingHostFeature => {
-                        trace!("image effect require a feature not");
+                        error!("image effect require a feature not implemented");
                         None
                     }
                     kOfxStatErrMemory => {
-                        trace!("memory error"); //in which case the action may be called again after a memory purge
+                        error!("describe in context returned a memory error"); //in which case the action may be called again after a memory purge
                         None
                     }
                     // something wrong, but no error code appropriate, plugin to post message
                     kOfxStatFailed => {
-                        trace!("something went wrong in describe in context");
+                        error!("something went wrong in describe in context");
                         None
                     }
                     kOfxStatErrFatal | _ => {
-                        panic!("describe_in_context returned a fatal error");
+                        error!("describe_in_context returned a fatal error");
+                        None
                     }
                 }
-                // Create a OfxImageEffect which can be used after
-                // TODO : return a Node ? create a node and store it ?
             }
             _ => None,
         }
