@@ -5,11 +5,15 @@ extern crate rustfx;
 use rustfx::rfx::engine::*;
 use rustfx::rfx::bundle::*;
 use std::path::PathBuf;
+use std::fs;
 
 fn find_ofx_test_plugins() -> Vec<PathBuf> {
     let mut bundle_paths: Vec<PathBuf> = Vec::new();
-    // FIXME: replace OFX path with relative
-    bundle_paths.push(PathBuf::from("/Users/cyril/develop/rustfx/tests/plugins/OFX"));
+    let mut path_to_plugins = fs::canonicalize(file!()).unwrap();
+    path_to_plugins.pop();
+    path_to_plugins.push("plugins");
+    path_to_plugins.push("OFX");
+    bundle_paths.push(path_to_plugins);
     bundle_paths
 }
 
