@@ -59,6 +59,10 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 #include "ofxUtilities.hpp" // example support utils
 
+
+#define DEBUG printf
+
+
 #if defined __APPLE__ || defined linux || defined __FreeBSD__
 #  define EXPORT __attribute__((visibility("default")))
 #elif defined _WIN32
@@ -177,7 +181,7 @@ setPerComponentScaleEnabledness( OfxImageEffectHandle effect)
 static OfxStatus
 onLoad(void)
 {
-  printf("onLoad() returning %d\n", kOfxStatOK);
+  DEBUG("onLoad() returning %d\n", kOfxStatOK);
   return kOfxStatOK;
 }
 
@@ -192,7 +196,7 @@ onUnLoad(void)
 static OfxStatus
 createInstance( OfxImageEffectHandle effect)
 {
-  printf("basic.cpp: createInstance called\n");
+  DEBUG("basic.cpp: createInstance called\n");
   // get a pointer to the effect properties
   OfxPropertySetHandle effectProps;
   gEffectHost->getPropertySet(effect, &effectProps);
@@ -218,10 +222,10 @@ createInstance( OfxImageEffectHandle effect)
   gParamHost->paramGetHandle(paramSet, "scaleA", &myData->scaleAParam, 0);
 
   // cache away out clip handles
-  printf("basic.cpp:clipGetClipHandle\n"); 
+  DEBUG("basic.cpp:clipGetClipHandle\n"); 
   gEffectHost->clipGetHandle(effect, kOfxImageEffectSimpleSourceClipName, &myData->sourceClip, 0);
   gEffectHost->clipGetHandle(effect, kOfxImageEffectOutputClipName, &myData->outputClip, 0);
-  printf("basic.cpp:clipGetClipHandle returned\n"); 
+  DEBUG("basic.cpp:clipGetClipHandle returned\n"); 
 
   if(myData->isGeneralEffect) {
     gEffectHost->clipGetHandle(effect, "Mask", &myData->maskClip, 0);
@@ -230,9 +234,9 @@ createInstance( OfxImageEffectHandle effect)
     myData->maskClip = 0;
 
   // set my private instance data
-  printf("describe in context set pointer\n"); 
+  DEBUG("describe in context set pointer\n"); 
   gPropHost->propSetPointer(effectProps, kOfxPropInstanceData, 0, (void *) myData);
-  printf("describe in context returned from set pointer\n"); 
+  DEBUG("describe in context returned from set pointer\n"); 
 
   // As the parameters values have already been loaded, set 
   // the enabledness of the per component scale values
@@ -833,7 +837,7 @@ defineScaleParam( OfxParamSetHandle effectParams,
     throw OfxuStatusException(stat);
   }
   // say we are a scaling parameter
-  printf("\nbasic.cpp props is %p\n", props);
+  DEBUG("\nbasic.cpp props is %p\n", props);
   gPropHost->propSetString(props, kOfxParamPropDoubleType, 0, kOfxParamDoubleTypeScale);
   gPropHost->propSetDouble(props, kOfxParamPropDefault, 0, 1.0);
   gPropHost->propSetDouble(props, kOfxParamPropMin, 0, 0.0);
@@ -929,20 +933,20 @@ describe(OfxImageEffectHandle  effect)
 {
   // first fetch the host APIs, this cannot be done before this call
   OfxStatus stat;
-  printf("basic.ofx:entering function describe with effect=%p\n", effect);
+  DEBUG("basic.ofx:entering function describe with effect=%p\n", effect);
   if((stat = ofxuFetchHostSuites()) != kOfxStatOK)
     return stat;
-  printf("basic.ofx: fetch suite done\n");
+  DEBUG("basic.ofx: fetch suite done\n");
   // record a few host features
-  printf("basic.ofx: calling propGetInt from %p with host parameter %p\n", gPropHost, gHost->host);
+  DEBUG("basic.ofx: calling propGetInt from %p with host parameter %p\n", gPropHost, gHost->host);
   gPropHost->propGetInt(gHost->host, kOfxImageEffectPropSupportsMultipleClipDepths, 0, &gHostSupportsMultipleBitDepths);
-  printf("basic.ofx: propGetInt from %p with host parameter %p returned %d\n", gPropHost, gHost->host, gHostSupportsMultipleBitDepths);
+  DEBUG("basic.ofx: propGetInt from %p with host parameter %p returned %d\n", gPropHost, gHost->host, gHostSupportsMultipleBitDepths);
 
   // get the property handle for the plugin
-  printf("basic.ofx: getting property set %p on effect host suite %p\n", effect, gEffectHost);
+  DEBUG("basic.ofx: getting property set %p on effect host suite %p\n", effect, gEffectHost);
   OfxPropertySetHandle effectProps=0;
   gEffectHost->getPropertySet(effect, &effectProps);
-  printf("basic.ofx: property set returned %p\n", effectProps); 
+  DEBUG("basic.ofx: property set returned %p\n", effectProps); 
   // We can render both fields in a fielded images in one hit if there is no animation
   // So set the flag that allows us to do this
   gPropHost->propSetInt(effectProps, kOfxImageEffectPluginPropFieldRenderTwiceAlways, 0, 0);
@@ -1039,7 +1043,7 @@ pluginMain(const char *action,  const void *handle, OfxPropertySetHandle inArgs,
 static void
 setHostFunc(OfxHost *hostStruct)
 {
-  printf("basic.ofx:setHostFunc called with host %p\n", hostStruct);
+  DEBUG("basic.ofx:setHostFunc called with host %p\n", hostStruct);
   gHost         = hostStruct;
 }
 
