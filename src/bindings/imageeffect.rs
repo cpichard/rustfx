@@ -1,6 +1,8 @@
 use libc;
 use bindings::property::*;
 use rfx::propertyset::*;
+use rfx::imageclip::*;
+use rfx::effectnode::*;
 use std::collections::HashMap;
 use bindings::param::*;
 use bindings::core::*;
@@ -8,61 +10,13 @@ use std::mem;
 use std::ffi::{CString, CStr};
 use std::ops::DerefMut;
 
-// NOTE: ImageEffectStruct is used for:
-// PluginInstance
-// PluginDescriptor
-// It's like a Node
-#[derive(Clone)]
-pub struct OfxImageEffectStruct {
-    props: *mut OfxPropertySet,
-    params: *mut OfxParameterSet,
-    clips: HashMap<CString, Box<OfxImageClip>>,
+pub struct OfxImageMemoryStruct {
+   // TODO write image memory in another file
 }
-
-//impl Clone for OfxImageEffectStruct {
-//    fn clone(&self) -> OfxImageEffectStruct { 
-//        // TODO: copy values
-//        OfxImageEffectStruct {
-//            props: self.props.clone(), 
-//            params: self.params.clone(),
-//            clips: self.clips.clone(), // TODO: it seems inefficient at firts sight; check perf ! 
-//        }
-//    }
-//}
 
 pub type OfxImageEffectHandle = *mut libc::c_void;
-
-
-impl OfxImageEffectStruct {
-    pub fn new() -> Self {
-        OfxImageEffectStruct {
-            props: Box::into_raw(OfxPropertySet::new()),
-            params: Box::into_raw(OfxParameterSet::new()),
-            clips: HashMap::new(),
-        }
-    }
-}
-
-pub struct OfxImageMemoryStruct {
-   // TODO stuff for image memory 
-}
-
 pub type OfxImageMemoryHandle = *mut libc::c_void;
-
-#[derive(Clone)]
-pub struct OfxImageClip {
-    // TODO move ImageClip where it belongs and fill with relevant code
-    props: Box<OfxPropertySet>,
-}
-
 pub type OfxImageClipHandle = *mut libc::c_void;
-
-impl OfxImageClip {
-    pub fn new() -> Self {
-        OfxImageClip { props: OfxPropertySet::new() }
-    }
-}
-
 
 // OfxImageEffectSuite function types here for clarity
 pub type GetParamSetType = extern "C" fn(OfxImageEffectHandle, *mut OfxParamSetHandle) -> OfxStatus;
@@ -99,9 +53,9 @@ extern "C" fn get_property_set(image_effect_ptr: OfxImageEffectHandle,
                                prop_handle: *mut OfxPropertySetHandle)
                                -> OfxStatus {
     if !image_effect_ptr.is_null() {
-        let image_effect: &mut OfxImageEffectStruct = unsafe { mem::transmute(image_effect_ptr) };
-        unsafe { *prop_handle = image_effect.props as *mut libc::c_void };
+        let image_effect: &mut EffectNode = unsafe { mem::transmute(image_effect_ptr) };
         unsafe {
+            *prop_handle = image_effect.properties_handle();
             trace!("getPropertySet setting props {:?}",
                    *prop_handle as *const _)
         };
@@ -115,9 +69,11 @@ extern "C" fn get_param_set(image_effect_ptr: OfxImageEffectHandle,
                             params: *mut OfxParamSetHandle)
                             -> OfxStatus {
     if !image_effect_ptr.is_null() && !params.is_null() {
-        let image_effect: &OfxImageEffectStruct = unsafe { mem::transmute(image_effect_ptr) };
-        unsafe { *params = mem::transmute(image_effect.params) };
-        unsafe { trace!("getParameterSet {:?}", *params as *const _) };
+        let image_effect: &EffectNode = unsafe { mem::transmute(image_effect_ptr) };
+        unsafe {
+            *params = image_effect.parameter_handle();
+            trace!("get_parameter_set {:?}", *params as *const _);
+        }
         return kOfxStatOK;
     }
     kOfxStatErrBadHandle
@@ -141,14 +97,11 @@ extern "C" fn clip_define(handle: OfxImageEffectHandle,
     if handle.is_null() {
         panic!("null image effect handle passed in clipDefine function");
     }
-    let image_effect: &mut OfxImageEffectStruct = unsafe { mem::transmute(handle) };
+    let image_effect: &mut EffectNode = unsafe { mem::transmute(handle) };
 
     // TODO: check if name is valid, and is not a null pointer
     let key: CString = unsafe { CStr::from_ptr(name).to_owned() };
-    let mut clip = OfxImageClip::new();
-    unsafe { *props = mem::transmute(clip.props.deref_mut()) };
-    unsafe {trace!("defining clip {:?} in {:?}", key, image_effect as * const _)};
-    image_effect.clips.insert(key, Box::new(clip));
+    unsafe { *props = image_effect.new_clip(key) };
     kOfxStatOK
 }
 
@@ -171,7 +124,7 @@ extern "C" fn clip_get_handle(handle: OfxImageEffectHandle,
     if handle.is_null() {
         panic!("null image effect handle passed in clipDefine function");
     }
-    let image_effect: &mut OfxImageEffectStruct = unsafe { mem::transmute(handle) };
+    let image_effect: &mut EffectNode = unsafe { mem::transmute(handle) };
 
     // TODO: check if name is valid, and is not a null pointer
     let key: CString = unsafe { CStr::from_ptr(name).to_owned() };
@@ -192,7 +145,7 @@ extern "C" fn clip_get_handle(handle: OfxImageEffectHandle,
         }
         None => {
             let key: CString = unsafe { CStr::from_ptr(name).to_owned() };
-            unsafe{trace!("clip {:?} not found in {:?}", key, handle as * const _ )};
+            unsafe { trace!("clip {:?} not found in {:?}", key, handle as *const _) };
             panic!("unable to find clip");
             kOfxStatErrBadHandle
         }

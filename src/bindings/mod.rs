@@ -1,4 +1,7 @@
 ///! All OFX modules
+///
+/// TODO: enable warnings
+///
 #[allow(non_upper_case_globals)]
 #[allow(dead_code)]
 pub mod core;

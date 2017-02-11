@@ -3,6 +3,7 @@ use libc::*;
 use bindings::core::*;
 use bindings::plugin::*;
 use rfx::propertyset::*;
+use rfx::effectnode::*;
 use rfx::bundle::Bundle;
 use bindings::imageeffect::*;
 use std::collections::HashMap;
@@ -13,7 +14,7 @@ use std::mem::transmute;
 pub struct Engine {
     ofx_host: *mut OfxHost,
     bundles: Vec<Bundle>,
-    plugins: HashMap<String, (OfxPlugin, OfxImageEffectStruct)>,
+    plugins: HashMap<String, (OfxPlugin, EffectNode)>,
 }
 
 impl Engine {
@@ -49,7 +50,7 @@ impl Engine {
                 match plugin.action_load() {
                     kOfxStatOK | kOfxStatReplyDefault => {
                         trace!("action_load returned kOfxStatOk or kOfxStatReplyDefault");
-                        let plugin_desc = OfxImageEffectStruct::new();
+                        let plugin_desc = EffectNode::new();
                         let plug_desc_ptr: *const c_void = unsafe { transmute(&plugin_desc) };
                         // todo : store information returned by the plugin, like clips and
                         // parameters. Also store image_effect to avoid having it destroyed 
@@ -75,8 +76,8 @@ impl Engine {
 
 
     #[allow(non_upper_case_globals)]
-    pub fn image_effect(&mut self, plugin_name: &str) -> Option<OfxImageEffectStruct> {
-        trace!("image_effect creating OfxImageEffectStruct");
+    pub fn image_effect(&mut self, plugin_name: &str) -> Option<EffectNode> {
+        trace!("image_effect creating EffectNode");
         let found = match self.plugins.get_mut(plugin_name) {
             Some( plugin ) => {
                 debug!("image_effect found plugin {:?}\n", plugin.0);

@@ -5,6 +5,10 @@ use std::io::BufRead;
 use std::io::BufReader;
 use std::io::Error;
 
+enum RfxParsingState {
+    TopLevel,
+    NodeParsed(NodeHandle),
+}
 // Stores temporary parsing data
 pub struct RfxFileFormat<'a> {
     reader: BufReader<&'a File>,
@@ -22,61 +26,75 @@ impl<'a> RfxFileFormat<'a> {
         }
     }
 
-    /// Update a project with the content of the file the parser was initialized with
+    /// Update a project with the content of the file 
     /// Returns the updated project
     pub fn update(&mut self, mut project: Project) -> Project {
+        let mut context = RfxParsingState::TopLevel;
         while let Ok(bytes) = self.next() {
             if bytes == 0 {
                 return project;
             }
             self.line_bytes = bytes;
-            self.parse_top_level(&mut project);
+            //
+            // Parse depending on the current parser context
+            let newcontext = match context {
+                // Expect top level command
+                RfxParsingState::TopLevel => self.parse_top_level(&mut project),
+                // a Node was parsed
+                RfxParsingState::NodeParsed(ref node) => {
+                    // Expect parsing parameters
+                    let param_parsed = self.parse_node_parameters(&mut project, node);
+                    if param_parsed {
+                        RfxParsingState::NodeParsed(node.clone()) // TODO avoid cloning here, it shouldn't be necessary 
+                    } else {
+                        self.parse_top_level(&mut project)
+                    }
+                }
+            };
+            context = newcontext;
         }
         project
     }
 
     /// Next line
     fn next(&mut self) -> Result<usize, Error> {
+        self.current_line.clear();
         self.reader.read_line(&mut self.current_line)
     }
 
     /// Parse top level command and setup a context
-    fn parse_top_level(&mut self, project: &mut Project) {
+    /// Returns true if the line has been consumed
+    fn parse_top_level(&self, project: &mut Project) -> RfxParsingState {
         if self.current_line.starts_with("node") {
-            // debug println!("node {}", self.current_line);
-            self.parse_add_node_cmd(project);
+            match self.parse_add_node_cmd(project) {
+                Some(node) => RfxParsingState::NodeParsed(node),
+                None => RfxParsingState::TopLevel, 
+            }
         } else if self.current_line.starts_with("bundle") {
             println!("bundle {}", self.current_line);
             // simple test to alter the project p
             let plugins = Vec::new();
             project.load_plugins(plugins);
+            RfxParsingState::TopLevel
         } else if self.current_line.starts_with("#") {
             // Comment next line
+            RfxParsingState::TopLevel
+        } else if self.current_line.trim().is_empty() {
+            RfxParsingState::TopLevel
         } else {
-            panic!("Unrecognized token {}", self.current_line);
+            panic!("unable to parse top level command {}", self.current_line);
         }
     }
 
-    fn parse_add_node_cmd(&mut self, project: &mut Project) {
+    fn parse_add_node_cmd(&self, project: &mut Project) -> Option<NodeHandle> {
         // Read node type
-        let mut node_created: Option<NodeHandle> = {
-            let plugin_name = unsafe { self.current_line.slice_unchecked("node".len()+1, self.current_line.len()-1)};
-            project.new_node(plugin_name)
+        let plugin_name = unsafe {
+            self.current_line.slice_unchecked("node".len() + 1, self.current_line.len() - 1)
         };
-
-        match node_created {
-            Some(node) => {
-                // Read node parameters
-                self.parse_node_parameters(project, node)
-            }
-            None => {
-        //        let (_, node_type) = self.current_line.split_at(5); // replace by sizeof("node") + 1 ?
-        //        panic!("unable to create node {}", node_type);
-            }
-        }
+        project.new_node(plugin_name)
     }
 
-    fn parse_node_parameters(&mut self, project: &mut Project, node: NodeHandle) {
+    fn parse_node_parameters(&self, project: &mut Project, node: &NodeHandle) -> bool {
         // should start with a space
         // count number of spaces ?
         if self.current_line.starts_with(" ") {
@@ -85,16 +103,18 @@ impl<'a> RfxFileFormat<'a> {
             // and its value
             let mut words = self.current_line.trim().split_whitespace();
             let key = words.nth(0);
-            let value = words.nth(1);
+            let value = words.nth(0);
             match (key, value) {
-                (Some(k), Some(v)) => {
-                    let some_node = Some(node);
-                    project.set_value(&some_node, k.to_string(), v.to_string())
+                (Some(k), Some(v)) => project.set_value(node, k.to_string(), v.to_string()),
+                (_, _) => {
+                    panic!("unable to parse key value {:?} {:?}", key, value);
                 }
-                (_, _) => panic!("unrecognized line"),
             }
 
-        }
+            return true;
+        } else {
+            return false;
+        };
     }
 }
 
@@ -114,8 +134,32 @@ fn parse_one_node() {
             let mut parser = RfxFileFormat::new(&file);
             project = parser.update(project);
             // read one node ?
-            println!("NB NODES: {}", project.nb_nodes());
             assert!(project.nb_nodes() == 1);
+            // get node and get its value
+            // TODO test parameters
+        } 
+        Err(_) => {
+            panic!("unable to open {:?}", &path);
+            assert!(false);
+        }
+    }
+}
+
+#[test]
+fn parse_two_nodes() {
+    let mut path = PathBuf::from(file!());
+    path.pop();
+    path.pop();
+    path.pop();
+    path.push("tests/projects/2.rfx");
+    match File::open(&path) {
+        Ok(file) => {
+            let mut project = Project::new();
+            let mut parser = RfxFileFormat::new(&file);
+            project = parser.update(project);
+            // read one node ?
+            println!("NB NODES: {}", project.nb_nodes());
+            assert!(project.nb_nodes() == 2);
             // get node and get its value
         } 
         Err(_) => {

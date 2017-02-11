@@ -4,15 +4,15 @@
 
 use bindings::imageeffect::*;
 use rfx::engine::*;
+use rfx::effectnode::*;
 use rfx::rfxfileformat::RfxFileFormat;
 use std::path::PathBuf;
 use std::collections::HashMap;
 use std::fs::File;
 
-pub type Node = OfxImageEffectStruct;
+pub type Node = EffectNode;
 pub type NodeHandle = String;
 pub type ClipHandle = String;
-// Output Node, Input node, Input clip
 pub type NodeInput = (NodeHandle, ClipHandle);
 pub type NodeOutput = NodeHandle;
 
@@ -31,7 +31,7 @@ pub struct Project {
     engine: Engine,
 }
 
-/// This would the principal "API" object exposed 
+/// This would the principal "API" object exposed
 /// with simple function like load_project
 impl Project {
     pub fn new() -> Project {
@@ -75,11 +75,18 @@ impl Project {
     }
 
     pub fn set_value(&mut self,
-                     node_handle: &Option<NodeHandle>,
+                     node_handle: &NodeHandle,
                      param_name: String,
                      param_value: String) {
-        // DEBUGGING 
-        format!("Set values {:} {:}", param_name, param_value);
+        // DEBUGGING
+        println!("Set values {:} {:}", param_name, param_value);
+        let maybe_node = self.nodes.get_mut(node_handle);
+        match maybe_node {
+            Some(node) => {
+                node.set_value(&param_name, param_value);
+            }
+            None => {}    
+        }
     }
 
     pub fn get_input(&self,
