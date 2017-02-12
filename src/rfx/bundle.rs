@@ -125,6 +125,12 @@ impl Drop for Bundle {
     fn drop(&mut self) {
         trace!("Closing dynamic library {:?}", self.dll_path);
         if !self.dll_handle.is_null() {
+            // unload all plugins 
+            // TODO: should we unload the plugins here ?
+            for i in 0..self.nb_plugins {
+                // TODO check plugin has been loaded
+                self.get_plugin(i).action_unload();
+            }
             unsafe {
                 dlclose(self.dll_handle);
                 self.dll_handle = ptr::null_mut();

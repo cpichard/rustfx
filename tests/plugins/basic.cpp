@@ -60,7 +60,6 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include "ofxUtilities.hpp" // example support utils
 
 
-#define DEBUG printf
 
 
 #if defined __APPLE__ || defined linux || defined __FreeBSD__
@@ -181,6 +180,8 @@ setPerComponentScaleEnabledness( OfxImageEffectHandle effect)
 static OfxStatus
 onLoad(void)
 {
+  // TODO: add process id to the filename
+  START_LOGGING
   DEBUG("onLoad() returning %d\n", kOfxStatOK);
   return kOfxStatOK;
 }
@@ -189,6 +190,7 @@ onLoad(void)
 static OfxStatus
 onUnLoad(void)
 {
+  STOP_LOGGING
   return kOfxStatOK;
 }
 
@@ -256,6 +258,7 @@ destroyInstance( OfxImageEffectHandle  effect)
   if(myData)
     delete myData;
   return kOfxStatOK;
+
 }
 
 // tells the host what region we are capable of filling

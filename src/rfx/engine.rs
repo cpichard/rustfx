@@ -11,6 +11,7 @@ use std::path::PathBuf;
 use std::mem::transmute;
 
 /// Engine contains everything needed to launch a computation
+/// NOTE: this is more a Host than an Engine
 pub struct Engine {
     ofx_host: *mut OfxHost,
     bundles: Vec<Bundle>,

@@ -64,6 +64,17 @@ impl OfxPlugin {
                          ptr::null_mut(),
                          ptr::null_mut())
     }
+
+    // kOfxActionUnload is the last action passed to the plug-in before the binary containing the
+    // plug-in is unloaded. It is there to allow a plug-in to destroy any global data structures it
+    // may have created.
+    pub fn action_unload(&self) -> OfxStatus {
+        trace!("action unload");
+        (self.mainEntry)(keyword_ptr(kOfxActionUnload),
+                         ptr::null_mut(),
+                         ptr::null_mut(),
+                         ptr::null_mut())
+    }
     // The kOfxActionDescribe is the second action passed to a plug-in. It is where a plugin defines
     // how it behaves and the resources it needs to function.
     // Note that the handle passed in acts as a descriptor for, rather than an instance of the
@@ -119,6 +130,9 @@ impl OfxPlugin {
                                ptr::null_mut()) 
     }
 }
+
+// TODO : action unload
+
 
 // #[test]
 // fn test_clone() {

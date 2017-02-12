@@ -462,8 +462,9 @@ overlayMain(const char *action,  const void *handle, OfxPropertySetHandle inArgs
 static OfxStatus
 describe(OfxImageEffectHandle effect)
 {
+
   // fetch the host APIs
-  printf("custom.cpp: describe called\n");
+  DEBUG("custom.cpp: describe called\n");
   OfxStatus stat;
   if((stat = ofxuFetchHostSuites()) != kOfxStatOK)
     return stat;
@@ -499,7 +500,7 @@ describe(OfxImageEffectHandle effect)
 static OfxStatus
 describeInContext(OfxImageEffectHandle effect, OfxPropertySetHandle /*inArgs*/)
 {
-  printf("custom.cpp: describe in context called\n");
+  DEBUG("custom.cpp: describe in context called\n");
   // define the mandated single source clip
   OfxPropertySetHandle props;
   gEffectHost->clipDefine(effect, kOfxImageEffectSimpleSourceClipName, &props);
@@ -532,7 +533,7 @@ describeInContext(OfxImageEffectHandle effect, OfxPropertySetHandle /*inArgs*/)
   else {
     gPropHost->propSetInt(props, kOfxParamPropAnimates, 0, false);
   }
-  printf("custom.cpp: describe in context returning\n");
+  DEBUG("custom.cpp: describe in context returning\n");
 
   return kOfxStatOK;
 }
@@ -542,7 +543,7 @@ describeInContext(OfxImageEffectHandle effect, OfxPropertySetHandle /*inArgs*/)
 static OfxStatus
 pluginMain(const char *action,  const void *handle,  OfxPropertySetHandle inArgs, OfxPropertySetHandle outArgs)
 {
-  printf("custom.cpp: plugin main called with action %s\n", action);
+  DEBUG("custom.cpp: plugin main called with action %s\n", action);
   try {
   // cast to appropriate type
   OfxImageEffectHandle effect = (OfxImageEffectHandle) handle;
@@ -590,6 +591,7 @@ pluginMain(const char *action,  const void *handle,  OfxPropertySetHandle inArgs
 static void
 setHostFunc(OfxHost *hostStruct)
 {
+  START_LOGGING
   gHost         = hostStruct;
 }
 

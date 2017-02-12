@@ -18,6 +18,14 @@ extern OfxMemorySuiteV1      *gMemoryHost;
 extern OfxMultiThreadSuiteV1 *gThreadHost;
 extern OfxMessageSuiteV1 *gMessageSuite;
 
+
+/* Simple logging to file */
+static FILE *logfile = NULL; 
+#define START_LOGGING logfile = (FILE*)fopen(__FILE__".log", "w");
+#define STOP_LOGGING if (logfile) { fclose(logfile); logfile = NULL;}
+#define DEBUG(...) if(logfile) fprintf(logfile, "DEBUG: "__FILE__" "__VA_ARGS__);
+#define TRACE(...) if(logfile) fprintf(logfile, "TRACE: "__FILE__" "__VA_ARGS__);
+
 /* fetch our host APIs from the host struct given us
    the plugin's set host function must have been already called
  */
