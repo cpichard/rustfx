@@ -49,6 +49,7 @@ impl Project {
     // NodeHandle : change Option<String> to String
     // if the node can't be created by the plugin,
     // create a dummy placeholder node
+    // TODO: could return a result instead to handle the error
     pub fn new_node(&mut self, plugin_name: &str) -> Option<NodeHandle> {
 
         // Try to create a node using the plugins
@@ -58,6 +59,7 @@ impl Project {
                 // TODO: Make sure the key is not taken yet
                 // otherwise raise an error
                 // TODO: This should return a unique name
+                // write a function for unique name
                 println!("found image effect");
                 self.nodes.insert(plugin_name.to_string(), ofx_image_effect);
                 Some(plugin_name.to_string())
@@ -96,6 +98,7 @@ impl Project {
                      clip_name: &String)
                      -> Option<ClipHandle> {
 
+        // TODO return correct input 
         None
     }
 
