@@ -2,13 +2,13 @@
 /// a Project contains the graph of processing nodes
 ///
 
-use bindings::imageeffect::*;
 use rfx::engine::*;
 use rfx::effectnode::*;
 use rfx::rfxfileformat::RfxFileFormat;
 use std::path::PathBuf;
 use std::collections::HashMap;
 use std::fs::File;
+use std::ffi::{CString, CStr};
 
 pub type Node = EffectNode;
 pub type NodeHandle = String;
