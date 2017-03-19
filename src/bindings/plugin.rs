@@ -2,13 +2,11 @@ extern crate libc;
 use std::ffi::*;
 use libc::*;
 use bindings::core::*;
-use bindings::imageeffect::*;
 use rfx::propertyset::*;
 use std::ptr;
-use std::mem::transmute;
 
-// OfxPlugin bindings
-//
+/// Rust <-> C OfxPlugin bindings
+///
 #[repr(C)]
 #[derive(Clone, Debug)]
 #[allow(non_snake_case)]
