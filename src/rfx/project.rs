@@ -102,7 +102,7 @@ impl Project {
         // Open file
         match File::open(file_name) {
             Ok(file) => {
-                let mut project = Project::new();
+                let project = Project::new();
                 let mut parser = RfxFileFormat::new(&file);
                 parser.update(project)
             }
