@@ -1,10 +1,4 @@
-use libc;
-use bindings::property::*;
 use rfx::propertyset::*;
-use std::collections::HashMap;
-use std::mem;
-use std::ffi::{CString, CStr};
-use std::ops::DerefMut;
 
 #[derive(Clone)]
 pub struct OfxImageClip {
