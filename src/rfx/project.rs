@@ -83,7 +83,9 @@ impl Project {
         let maybe_node = self.nodes.get_mut(node_handle);
         match maybe_node {
             Some(node) => {
-                node.set_value(&param_name, param_value);
+                let p_name : CString = CString::new(param_name).unwrap();
+                let p_value : CString = CString::new(param_value).unwrap();
+                node.set_value(&p_name, p_value);
             }
             None => {}    
         }
