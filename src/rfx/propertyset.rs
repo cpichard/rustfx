@@ -9,14 +9,14 @@ use libc::*;
 /// A property value can be either Pointer, Integer, Double, String or Undefined
 #[derive(Debug, PartialEq, Clone)]
 pub enum PropertyValue {
-    Pointer (* const c_void),
-    Integer (c_int),
-    Double (c_double), // TODO: double check if it shouldn't be a float
+    Pointer(*const c_void),
+    Integer(c_int),
+    Double(c_double), // TODO: double check if it shouldn't be a float
     String(CString),
     Undefined,
 }
 
-/// Properties are stored in a HashMap. 
+/// Properties are stored in a HashMap.
 /// For each key we store a vector of properties
 #[derive(Clone)]
 pub struct OfxPropertySet {
@@ -24,42 +24,40 @@ pub struct OfxPropertySet {
 }
 
 impl OfxPropertySet {
-   
-    /// Create a new boxed property set 
-    pub fn new () -> Box<Self> {
-        let prop_set = OfxPropertySet {
-            props: HashMap::new(),
-        };
+    /// Create a new boxed property set
+    pub fn new() -> Box<Self> {
+        let prop_set = OfxPropertySet { props: HashMap::new() };
         Box::new(prop_set)
     }
-    
+
     /// Insert a value at (key, index)
-    pub fn insert<K, T>(& mut self, key: K, index: usize, value: T)
-        where PropertyValue: From<T>, K : Into<Vec<u8>>
+    pub fn insert<K, T>(&mut self, key: K, index: usize, value: T)
+        where PropertyValue: From<T>,
+              K: Into<Vec<u8>>
     {
-        // Look for property 
+        // Look for property
         let key_cstring = CString::new(key).unwrap();
         let mut properties = self.props.entry(key_cstring).or_insert(Vec::with_capacity(8));
         // Resize if index is out of bounds
         if index >= properties.len() {
-            properties.resize(index+1, PropertyValue::Undefined);
+            properties.resize(index + 1, PropertyValue::Undefined);
         }
         match properties.get_mut(index) {
             Some(stored) => *stored = PropertyValue::from(value),
             None => panic!("unable to find value at index"),
         };
-    } 
+    }
 
-    /// Get a property value at (key, index) 
-    pub fn get(& mut self, key: &CString, index: usize) -> Option<&PropertyValue> {
+    /// Get a property value at (key, index)
+    pub fn get(&mut self, key: &CString, index: usize) -> Option<&PropertyValue> {
         match self.props.get(key) {
             Some(prop_vector) => prop_vector.get(index),
             None => None,
         }
     }
-    
+
     /// Returns the number of properties for the key
-    pub fn dimension(& mut self, key: &CString) -> Option<usize> {
+    pub fn dimension(&mut self, key: &CString) -> Option<usize> {
         match self.props.get(key) {
             Some(prop_vector) => Some(prop_vector.len()),
             None => None,
@@ -75,32 +73,32 @@ impl Default for Box<OfxPropertySet> {
 
 
 /// Functions to convert to PropertyValues
-impl From<* const c_void> for PropertyValue {
-    fn from(value: * const c_void) -> Self {
+impl From<*const c_void> for PropertyValue {
+    fn from(value: *const c_void) -> Self {
         PropertyValue::Pointer(value)
     }
 }
 
 ///
-impl From<PropertyValue> for * const c_void {
+impl From<PropertyValue> for *const c_void {
     fn from(value: PropertyValue) -> Self {
         match value {
             PropertyValue::Pointer(p) => p,
             _ => panic!("wrong type: Pointer"),
-        } 
+        }
     }
 }
 
 ///
-impl From<* const c_char> for PropertyValue {
-    fn from(value: * const c_char) -> Self {
-        let c_str = unsafe{CStr::from_ptr(value)};
+impl From<*const c_char> for PropertyValue {
+    fn from(value: *const c_char) -> Self {
+        let c_str = unsafe { CStr::from_ptr(value) };
         PropertyValue::String(c_str.to_owned())
     }
 }
 
 ///
-impl From<PropertyValue> for * const c_char {
+impl From<PropertyValue> for *const c_char {
     fn from(value: PropertyValue) -> Self {
         match value {
             PropertyValue::String(val) => val.as_ptr(),
@@ -139,9 +137,13 @@ impl From<PropertyValue> for c_int {
     }
 }
 
-pub fn properties_ptr(props: Box<OfxPropertySet> ) -> * mut c_void {
-        Box::into_raw(props) as *mut c_void
+pub fn properties_ptr(props: Box<OfxPropertySet>) -> *mut c_void {
+    Box::into_raw(props) as *mut c_void
 }
+// pub fn properties_ptr(props: OfxPropertySet) -> * mut c_void {
+//        // Box::into_raw(props) as *mut c_void
+//        props.as_ptr()
+// }
 
 
 #[test]
@@ -175,22 +177,26 @@ fn test_property_set_and_get_string() {
 }
 
 #[cfg(test)]
-pub fn clone_keyword_test<'a>(value: &'a[u8]) -> * const c_char {
-    let mut v :Vec<u8> = Vec::with_capacity(value.len());
-    unsafe {v.set_len(value.len());}
+pub fn clone_keyword_test<'a>(value: &'a [u8]) -> *const c_char {
+    let mut v: Vec<u8> = Vec::with_capacity(value.len());
+    unsafe {
+        v.set_len(value.len());
+    }
     v.clone_from_slice(value);
     v.pop(); // removes \0
-    unsafe {CString::from_vec_unchecked(v).as_ptr()}
+    unsafe { CString::from_vec_unchecked(v).as_ptr() }
 }
 
 
 #[cfg(test)]
-pub fn kw_to_cstring_test<'a>(value: &'a[u8]) -> CString {
-    let mut v :Vec<u8> = Vec::with_capacity(value.len());
-    unsafe {v.set_len(value.len());}
+pub fn kw_to_cstring_test<'a>(value: &'a [u8]) -> CString {
+    let mut v: Vec<u8> = Vec::with_capacity(value.len());
+    unsafe {
+        v.set_len(value.len());
+    }
     v.clone_from_slice(value);
     v.pop(); // removes \0
-    unsafe {CString::from_vec_unchecked(v)}
+    unsafe { CString::from_vec_unchecked(v) }
 }
 
 #[test]
@@ -198,11 +204,11 @@ fn test_property_set_and_get_c_char() {
     let mut properties = OfxPropertySet::new();
     let uchar_buffer_key: &'static [u8] = b"uchar_buffer_key\0";
     let uchar_buffer_value: &'static [u8] = b"uchar_buffer_value\0";
-    let key = kw_to_cstring_test(uchar_buffer_key); 
+    let key = kw_to_cstring_test(uchar_buffer_key);
     properties.insert(key, 0, clone_keyword_test(uchar_buffer_value));
-    //let value_wrapper = PropertyValue::String();
-    //let key = kw_to_cstring_test(uchar_buffer_key); 
-    //assert_eq!(properties.get(&key, 0), Some(&value_wrapper));
+    // let value_wrapper = PropertyValue::String();
+    // let key = kw_to_cstring_test(uchar_buffer_key);
+    // assert_eq!(properties.get(&key, 0), Some(&value_wrapper));
 }
 
 
