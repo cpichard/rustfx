@@ -35,7 +35,7 @@ impl EffectNode {
     // This returns the pointer on the clip props
     // TODO: this should go in another function
     pub unsafe fn new_clip(&mut self, key: CString) -> *mut libc::c_void {
-        let mut clip = OfxImageClip::new();
+        let clip = OfxImageClip::new();
         self.clips.insert(key.clone(), Box::new(clip));
         // TODO: it doesn't look very efficient to query the map here
         match self.clips.get_mut(&key) {
@@ -44,8 +44,12 @@ impl EffectNode {
         }
     }
 
-    pub fn set_value(&mut self, key: & String, value: String) {
-        // depending on the key, convert the string representation to a value     
-        // TODO self.params.set_value_literal(key, value)
+    pub fn set_value(&mut self, key: &CString, value: CString) {
+        // depending on the key, convert the string representation to a value
+        // using pointer is not super handy
+        let param_set: &mut OfxParameterSet = unsafe { mem::transmute(self.params) };
+        param_set.set_value_literal(key, value);
     }
 }
+
+
