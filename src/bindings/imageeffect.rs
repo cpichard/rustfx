@@ -142,8 +142,8 @@ extern "C" fn clip_get_handle(handle: OfxImageEffectHandle,
         }
         None => {
             let key: CString = unsafe { CStr::from_ptr(name).to_owned() };
-            unsafe { trace!("clip {:?} not found in {:?}", key, handle as *const _) };
-            panic!("unable to find clip");
+            trace!("clip {:?} not found in {:?}", key, handle as *const _);
+            //panic!("unable to find clip");
             kOfxStatErrBadHandle
         }
     }
