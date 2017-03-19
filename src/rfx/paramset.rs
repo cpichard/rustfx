@@ -144,4 +144,11 @@ impl OfxParameterSet {
             }
         }
     }
+
+    /// Convert and set a value from a string to its type
+    pub fn set_value_literal(&mut self, p_name: &CString, value: CString) {
+        //self.data.get(&p_name);        
+    }
+
+
 }
