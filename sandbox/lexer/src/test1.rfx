@@ -1,0 +1,14 @@
+# this is a comment
+path "";
+plugin "uk.co.thefoundry.BasicGain";
+node "uk.co.thefoundry.BasicGain" {
+  param "name" "testnode1";
+  param "offset" 0.89;
+  param "color" 23 23 10;
+  property "" "";
+}
+node "uk.co.thefoundry.ReadExr" {
+  param "name" "Read.1";
+}
+connect "Read.1" "testnode1";
+render "testnode1";
