@@ -5,7 +5,6 @@ use bindings::plugin::*;
 use rfx::propertyset::*;
 use rfx::effectnode::*;
 use rfx::bundle::Bundle;
-use bindings::imageeffect::*;
 use std::collections::HashMap;
 use std::path::PathBuf;
 use std::mem::transmute;
