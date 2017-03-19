@@ -1,7 +1,6 @@
 
 extern crate libc;
 use libc::*;
-use bindings::property::*;
 use bindings::core::*;
 use std::ffi::*;
 use std::mem::*;
