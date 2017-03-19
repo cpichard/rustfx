@@ -319,6 +319,9 @@ pub static OFX_PARAMETER_SUITE_V1: OfxParameterSuiteV1 = OfxParameterSuiteV1 {
 };
 
 #[cfg(test)]
+use std::ffi::{CString, CStr};
+
+#[cfg(test)]
 fn init_parameter_test() -> (*mut OfxParameterSet, CString, CString) {
     let p_set = Box::into_raw(OfxParameterSet::new());
     let p_type = CString::new("OfxParamTypeInteger").unwrap();
