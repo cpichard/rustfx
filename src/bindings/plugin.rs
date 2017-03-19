@@ -129,9 +129,6 @@ impl OfxPlugin {
     }
 }
 
-// TODO : action unload
-
-
 // #[test]
 // fn test_clone() {
 //
