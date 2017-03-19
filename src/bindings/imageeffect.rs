@@ -1,9 +1,6 @@
 use libc;
 use bindings::property::*;
-use rfx::propertyset::*;
-use rfx::imageclip::*;
 use rfx::effectnode::*;
-use std::collections::HashMap;
 use bindings::param::*;
 use bindings::core::*;
 use std::mem;
