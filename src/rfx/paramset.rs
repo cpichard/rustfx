@@ -129,7 +129,7 @@ impl OfxParameterSet {
             "OfxParamTypeGroup" => self.data.insert(p_name_str, OfxParam::Group(0)),
             "OfxParamTypePage" => self.data.insert(p_name_str, OfxParam::Page(0)),
             "OfxParamTypePushButton" => self.data.insert(p_name_str, OfxParam::PushButton(0)),
-            _ => panic!("unknown parameter type"),
+            _ => panic!("parameter set define unknown parameter type"),
         };
         let p_name_str = unsafe { CStr::from_ptr(p_name) }.to_owned();
         self.data.get(&p_name_str).unwrap()
