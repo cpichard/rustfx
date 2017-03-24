@@ -177,6 +177,27 @@ impl<'a> Lexer<'a> {
     }
 }
 
+fn node(lexer: &mut Lexer) {
+    // eat node token
+    println!("found node");
+    let token = lexer.next_token();
+    match token {
+        Token::StringLiteral(plugin_name) => {
+            println!("node plugin name is {}", plugin_name);
+            // Allocate Node data and context
+        }
+        _ => println!("unable to parse node name"),
+    }
+
+    let token = lexer.next_token();
+    match token {
+        Token::OpenBrace => {
+            println!("entering node context commands");
+            //node_commands(); // TODO pass node
+        }
+        _ => println!("expected node context"),
+    }
+}
 
 fn main() {
     let mut path = PathBuf::from(file!());
@@ -186,15 +207,20 @@ fn main() {
 
     let mut file_content = String::new();
     file.read_to_string(&mut file_content);
-    // loop {
-    //    let token = next_token(&mut file_content.char_indices());
-    //    match token {
-    //        Token::EOF => {
-    //            break;
-    //        }
-    //        _ => println!("{:?}", token),
-    //    }
-    // }
+    let mut lexer = Lexer::new(&file_content);
+    loop {
+        let token = lexer.next_token();
+        match token {
+            Token::NodeCommand => {
+                // eat node
+                node(& mut lexer);
+                // Change state
+                // expect
+                break;
+            }
+            _ => println!("{:?}", token),
+        }
+    }
 
 }
 
@@ -347,7 +373,7 @@ fn test_token_comment() {
 }
 
 #[test]
-fn test_skip_linebreaks () {
+fn test_skip_linebreaks() {
     let text1 = "\n\n\n\n\nnode".to_string();
     let mut lexer = Lexer::new(&text1);
     assert!(lexer.next_token() == Token::NodeCommand);
