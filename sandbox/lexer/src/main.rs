@@ -176,6 +176,7 @@ impl<'a> Lexer<'a> {
             }
         }
     }
+
 }
 
 fn node_commands(lexer: &mut Lexer) {

@@ -1,4 +1,5 @@
 use std::fs::File;
+use std::io::Read;
 use rfx::project::Project;
 use rfx::project::NodeHandle;
 use std::io::BufRead;
@@ -9,6 +10,7 @@ use std::collections::HashMap;
 ///
 /// RFX file format parser
 ///
+
 // Commands recognized,
 #[derive(Debug, PartialEq, Clone)]
 enum CommandType {
@@ -19,8 +21,8 @@ enum CommandType {
 }
 
 lazy_static! {
-static ref CommandMap: HashMap<&'static str, CommandType> = {
-    let mut commands = HashMap::new();
+    static ref CommandMap: HashMap<&'static str, CommandType> = {
+        let mut commands = HashMap::new();
         commands.insert("node", CommandType::Node);
         commands.insert("param", CommandType::Param);
         commands.insert("path", CommandType::Path); // plugin path, likely to change
@@ -173,7 +175,7 @@ impl<'a> Lexer<'a> {
                                 self.end += 1;
                                 continue;
                             }
-                            _ =>{}
+                            _ => {}
                         }
                     }
                     let number = &self.input[self.begin..self.end];
@@ -192,7 +194,7 @@ impl<'a> Lexer<'a> {
                                 self.end += 1;
                                 continue;
                             }
-                            _ =>{}
+                            _ => {}
                         }
                     }
                     let number = &self.input[self.begin..self.end];
@@ -223,17 +225,18 @@ impl<'a> Lexer<'a> {
 }
 
 // Stores temporary parsing data
-pub struct RfxFileFormat<'a> {
-    reader: BufReader<&'a File>,
-    current_line: String, // line_bytes: usize,
+pub struct RfxFileFormat {
+    content: String, // line_bytes: usize,
 }
 
-impl<'a> RfxFileFormat<'a> {
+impl RfxFileFormat {
+
     /// Returns a new parser data
-    pub fn new(file: &File) -> RfxFileFormat {
+    pub fn new(file: & mut File) -> RfxFileFormat {
+        let mut content: String = String::new();
+        file.read_to_string(&mut content);
         RfxFileFormat {
-            reader: BufReader::new(file),
-            current_line: String::with_capacity(1024), // line_bytes: 0,
+            content: content,
         }
     }
 
@@ -241,23 +244,19 @@ impl<'a> RfxFileFormat<'a> {
     /// Returns the updated project
     pub fn update_project(&mut self, mut project: Project) -> Project {
 
-        // For each line, get the tokens
-        while let Ok(bytes_read) = self.next_line() {
-            if bytes_read == 0 {
-                return project;
-            }
-            // NOTE: new lexer for each line, so we are yet unable to
-            //       parser multiline strings
-            //       IT DOES NOT WORK !!!!!
-            let mut lexer = Lexer::new(&self.current_line);
+        let mut lexer = Lexer::new(&self.content);
+        loop {
             let token = lexer.next_token();
             match token { // top level should be a command
                 Token::Command(c) => {
                     println!("found command {:?}", c);
                     // find command function (lexer, project)
                     // but testing with node atm
-                    node(& mut lexer, & mut project);
+                    node(&mut lexer, &mut project);
                 } 
+                Token::EOF => {
+                    break;
+                }
                 _ => {
                     // TODO : return error
                     panic!("error: expecting a command, got xxxx");
@@ -266,30 +265,23 @@ impl<'a> RfxFileFormat<'a> {
         }
         project
     }
-
-    /// Next line
-    fn next_line(&mut self) -> Result<usize, Error> {
-        self.current_line.clear();
-        self.reader.read_line(&mut self.current_line)
-    }
-
+}
 
 ///
 /// Parse a node in the top level
 ///
 fn node(lexer: &mut Lexer, project: &mut Project) {
-    println!("node");    
+    println!("node");
     // Expect a string literal which is the plugin name
     if let Token::StringLiteral(plugin_name) = lexer.next_token() {
         let node_handle = project.new_node(&plugin_name);
         println!("{:?}", node_handle);
-        //
         // Once we have a new node, we can continue parsing in context or just returning
         //
         match lexer.next_token() {
             Token::OpenBrace => {
                 // Parse commands in the node context
-                node_commands(lexer, project, & mut node_handle.unwrap())
+                node_commands(lexer, project, &mut node_handle.unwrap())
             } 
             Token::SemiColon => {
                 return;
@@ -313,7 +305,7 @@ fn node_commands(lexer: &mut Lexer, project: &mut Project, node: &mut NodeHandle
                 return;
             }
         }
-    } 
+    }
 }
 
 #[cfg(test)]
@@ -479,24 +471,24 @@ fn lexer_token_scientific_float() {
 
 #[test]
 fn parse_unique_node() {
-   let mut path = PathBuf::from(file!());
-   path.pop();
-   path.pop();
-   path.pop();
-   path.push("tests/projects/1.rfx");
-   match File::open(&path) {
-       Ok(file) => {
-           let mut project = Project::new();
-           let mut parser = RfxFileFormat::new(&file);
-           project = parser.update_project(project);
-           // read one node ?
-           assert!(project.nb_nodes() == 1);
-           // get node and get its value
-           // TODO test parameters
-       }
-       Err(_) => {
-           panic!("unable to open {:?}", &path);
-           assert!(false);
-       }
-   }
+    let mut path = PathBuf::from(file!());
+    path.pop();
+    path.pop();
+    path.pop();
+    path.push("tests/projects/1.rfx");
+    match File::open(&path) {
+        Ok(mut file) => {
+            let mut project = Project::new();
+            let mut parser = RfxFileFormat::new(&mut file);
+            project = parser.update_project(project);
+            // read one node ?
+            assert!(project.nb_nodes() == 1);
+            // get node and get its value
+            // TODO test parameters
+        }
+        Err(_) => {
+            panic!("unable to open {:?}", &path);
+            assert!(false);
+        }
+    }
 }

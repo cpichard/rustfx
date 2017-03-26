@@ -106,9 +106,9 @@ impl Project {
         // Read a file and re-construct a Project
         // Open file
         match File::open(file_name) {
-            Ok(file) => {
+            Ok(mut file) => {
                 let project = Project::new();
-                let mut parser = RfxFileFormat::new(&file);
+                let mut parser = RfxFileFormat::new(&mut file);
                 parser.update_project(project)
             }
             Err(e) => {
