@@ -4,11 +4,30 @@ use rfx::project::NodeHandle;
 use std::io::BufRead;
 use std::io::BufReader;
 use std::io::Error;
+use std::collections::HashMap;
 
 ///
 /// RFX file format parser
 ///
-///
+// Commands recognized,
+#[derive(Debug, PartialEq, Clone)]
+enum CommandType {
+    Node = 0, // create node
+    Param, // set param
+    Path, // plugin path
+    Property, // set property
+}
+
+lazy_static! {
+static ref CommandMap: HashMap<&'static str, CommandType> = {
+    let mut commands = HashMap::new();
+        commands.insert("node", CommandType::Node);
+        commands.insert("param", CommandType::Param);
+        commands.insert("path", CommandType::Path); // plugin path, likely to change
+        commands.insert("property", CommandType::Property);
+        commands
+    };
+}
 
 
 enum RfxParsingContext {
