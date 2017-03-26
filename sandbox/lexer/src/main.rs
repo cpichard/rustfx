@@ -6,9 +6,10 @@ use std::str::CharIndices;
 use std::str::Chars;
 use std::path::PathBuf;
 
-/// Test parsing in rust
-/// TODO : return error
 ///
+/// Test parsing in rust
+///
+/// TODO: return meaningful parsing errors
 /// TODO: test "toto".len() is optimized and compiles directly with the len of the string
 #[derive(Debug, PartialEq)]
 pub enum Token {
@@ -177,6 +178,23 @@ impl<'a> Lexer<'a> {
     }
 }
 
+fn node_commands(lexer: &mut Lexer) {
+    
+    let token = lexer.next_token();
+    match token {
+        Token::ParamCommand => {
+            println!("parameter ");
+            // Allocate Node data and context
+        }
+        Token::PropertyCommand => {
+
+        }
+        _ => println!("unable to parse node name"),
+    }
+    
+}
+
+/// Parse a Node
 fn node(lexer: &mut Lexer) {
     // eat node token
     println!("found node");
@@ -193,7 +211,7 @@ fn node(lexer: &mut Lexer) {
     match token {
         Token::OpenBrace => {
             println!("entering node context commands");
-            //node_commands(); // TODO pass node
+            node_commands(lexer); // TODO pass node
         }
         _ => println!("expected node context"),
     }
