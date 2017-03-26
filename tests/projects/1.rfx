@@ -1,10 +1,2 @@
-loadplugin uk.co.thefoundry.BasicGainPlugin 
-node uk.co.thefoundry.BasicGainPlugin {
-   name "BasicGain1"; 
-   scale 0.5;
-}
 node "uk.co.thefoundry.BasicGainPlugin" {
-   name "BasicGain1"; 
-   scale 0.5;
 }
-connect "BasicGain1" "" "BasicGain2" ""

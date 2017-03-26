@@ -109,7 +109,7 @@ impl Project {
             Ok(file) => {
                 let project = Project::new();
                 let mut parser = RfxFileFormat::new(&file);
-                parser.update(project)
+                parser.update_project(project)
             }
             Err(e) => {
                 panic!("unable to load file {}", e);
