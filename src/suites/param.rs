@@ -65,7 +65,7 @@ extern "C" fn param_define(pset_ptr: OfxParamSetHandle,
         error!("null pointer passed to param define");
         return kOfxStatErrBadHandle;
     }
-    
+
     // Create the parameter and returns an error if there was already one
     // NOTE that if the type is unknown, the code will return None as if
     // a parameter was created.
@@ -84,7 +84,7 @@ extern "C" fn param_define(pset_ptr: OfxParamSetHandle,
             unsafe {
                 *props = param.properties();
                 trace!("param_define props is {:?}", *props);
-            } 
+            }
         }
         kOfxStatOK
     } else {
@@ -118,7 +118,9 @@ pub extern "C" fn param_get_nb_component(handle: *mut c_void) -> u32 {
 }
 
 
-/// This function is called from the C code
+/// This is the actual function which change the values
+/// its called from the C code
+///
 #[no_mangle]
 pub extern "C" fn param_set_components(handle: *mut c_void, data: *mut c_void) {
     let param = handle as *mut OfxParam;
@@ -131,12 +133,12 @@ pub extern "C" fn param_set_components(handle: *mut c_void, data: *mut c_void) {
 
 #[no_mangle]
 pub extern "C" fn param_get_components(handle: *mut c_void, data: *mut c_void) {
-    // TODO move to paramset
-    unsafe {
-        let param = handle as *mut OfxParam;
-        (*param).get_raw_data(data);
+    let param = handle as *mut OfxParam;
+    if param.is_null() {
+        error!("unable to get parameter value, got null pointer");
+    } else {
+        unsafe { (*param).get_raw_data(data) };
     }
-
 }
 
 /// This function is used in the C code to differentiate between
