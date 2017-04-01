@@ -16,13 +16,13 @@ extern unsigned int param_get_type(void *handle);
 //       extract the message part to another file
 
 
-int c_test_host(void *host) {
-    OfxHost *ofxHost = (OfxHost*)host;
-    if(ofxHost->fetchSuite(ofxHost->host, "OfxPropertySuite", 1) == 0) {
-        return 1;
-    };
-    return 0;  
-}
+//int c_test_host(void *host) {
+//    OfxHost *ofxHost = (OfxHost*)host;
+//    if(ofxHost->fetchSuite(ofxHost->host, "OfxPropertySuite", 1) == 0) {
+//        return 1;
+//    };
+//    return 0;  
+//}
 
 
 OfxStatus param_set_value (void *handle, ...) {

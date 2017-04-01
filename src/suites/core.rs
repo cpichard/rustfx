@@ -126,7 +126,7 @@ impl OfxHost {
 }
 
 #[cfg(test)]
-#[link(name = "param")]
+#[link(name = "ofxc")]
 extern "C" {
     fn c_test_host(host: *mut c_void) -> c_int;
 }
