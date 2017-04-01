@@ -44,11 +44,12 @@ impl EffectNode {
         }
     }
 
+    // TODO : define the API for the internal node.
     pub fn set_value(&mut self, key: &CString, value: CString) {
         // depending on the key, convert the string representation to a value
         // using pointer is not super handy
         let param_set: &mut OfxParameterSet = unsafe { mem::transmute(self.params) };
-        param_set.set_value_literal(key, value);
+        // TODO param_set.set_value_literal(key, value);
     }
 }
 

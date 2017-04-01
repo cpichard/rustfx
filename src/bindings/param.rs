@@ -1,6 +1,7 @@
 // Parameter suite
 extern crate libc;
 use libc::*;
+use std::ffi::{CString, CStr};
 use rfx::paramset::*;
 use bindings::property::*;
 use bindings::core::*;
@@ -43,32 +44,58 @@ pub type ParamEditBeginType = extern "C" fn(OfxParamSetHandle, *const libc::c_ch
 pub type ParamEditEndType = extern "C" fn(OfxParamSetHandle) -> OfxStatus;
 
 
-// Parameter definition, caller in decribe in context
-// Arguments
-// pset_ptr:  handle to the parameter set descriptor that will hold this parameter
-// p_type: type of the parameter to create, one of the kOfxParamType #defines
-// P_name: unique name of the parameter
-// props: if not null, a pointer to the parameter descriptor's property set will be placed here.
-//
+/// Parameter definition, caller in describe in context
+/// Arguments
+/// pset_ptr:  handle to the parameter set descriptor that will hold this parameter
+/// p_type: type of the parameter to create, one of the kOfxParamType #defines
+/// p_name: unique name of the parameter
+/// props: if not null, a pointer to the parameter descriptor's property set will be placed here.
+///
+/// TODO: handle case where the type is unknown or unsupported
+/// kOfxStatErrUnknown - if the type is unknown
+/// kOfxStatErrUnsupported - if the type is known but unsupported
+#[no_mangle]
 extern "C" fn param_define(pset_ptr: OfxParamSetHandle,
                            p_type: *const c_char,
                            p_name: *const c_char,
                            props: *mut OfxPropertySetHandle)
                            -> OfxStatus {
-    let mut param_set: &mut OfxParameterSet = unsafe { transmute(pset_ptr) };
-    let param = param_set.define(p_type, p_name);
-    if !props.is_null() {
-        unsafe {
-            *props = param.properties();
-            println!("props is {:?}", *props);
-        } // TODO keep this pointer in a map
+    // Test pointers nullness
+    if pset_ptr.is_null() || p_type.is_null() || p_name.is_null() {
+        error!("null pointer passed to param define");
+        return kOfxStatErrBadHandle;
     }
-    kOfxStatOK
+    
+    // Create the parameter and returns an error if there was already one
+    // NOTE that if the type is unknown, the code will return None as if
+    // a parameter was created.
+    let mut paramset: &mut OfxParameterSet = unsafe { transmute(pset_ptr) };
+    let p_type_str = unsafe { CStr::from_ptr(p_type) }.to_str().unwrap();
+    let p_name_str = unsafe { CStr::from_ptr(p_name) }.to_owned();
+    if let Some(previous_param) = paramset.create_param(p_type_str, p_name_str) {
+        return kOfxStatErrExists;
+    }
+
+    // Get the newly created parameter
+    let p_name_str = unsafe { CStr::from_ptr(p_name) }.to_owned();
+    let found_param = unsafe { paramset.get_param(transmute(&p_name_str)) };
+    if let Some(param) = found_param {
+        if !props.is_null() {
+            unsafe {
+                *props = param.properties();
+                trace!("param_define props is {:?}", *props);
+            } 
+        }
+        kOfxStatOK
+    } else {
+        kOfxStatErrUnsupported // Type unknown unsupported || no memory left
+    }
 }
 
 #[no_mangle]
 pub extern "C" fn param_get_nb_component(handle: *mut c_void) -> u32 {
     let p_obj = handle as *mut OfxParam;
+    // TODO move to paramset
     unsafe {
         match *p_obj {
             OfxParam::Int1(_) => 1,
@@ -90,72 +117,30 @@ pub extern "C" fn param_get_nb_component(handle: *mut c_void) -> u32 {
     }
 }
 
+
+/// This function is called from the C code
 #[no_mangle]
 pub extern "C" fn param_set_components(handle: *mut c_void, data: *mut c_void) {
-    let p_obj = handle as *mut OfxParam;
-    unsafe {
-        match *p_obj {
-            OfxParam::Int1(ref mut param) => {
-                let value: *mut i32 = data as *mut i32;
-                param.default = *value;
-            }
-            OfxParam::Int2(ref mut param) => {
-                let value: *mut i32 = data as *mut i32;
-                param.default = (*value, *value.offset(1));
-                // *p_obj = OfxParam::Int2(*value, *value.offset(1));
-            }
-            // OfxParam::Int3(_, _, _) => 3,
-            // OfxParam::Double1(_) => 1,
-            // OfxParam::Double2(_, _) => 2,
-            // OfxParam::Double3(_, _, _) => 3,
-            // OfxParam::RGB(_, _, _) => 3,
-            // OfxParam::RGBA(_, _, _, _) => 4,
-            // OfxParam::String(_) => 1,
-            // OfxParam::Boolean(bool) => 1,
-            // OfxParam::Choice(_) => 1,
-            // OfxParam::Custom(_) => 1,
-            // OfxParam::PushButton(_) => 1,
-            // OfxParam::Group(_) => 1,
-            // OfxParam::Page(_) => 1,
-            _ => panic!("param set components for this type is not implemented yet"),
-        }
+    let param = handle as *mut OfxParam;
+    if param.is_null() {
+        error!("unable to set parameter value, got null pointer");
+    } else {
+        unsafe { (*param).set_raw_data(data) };
     }
-
 }
 
 #[no_mangle]
 pub extern "C" fn param_get_components(handle: *mut c_void, data: *mut c_void) {
+    // TODO move to paramset
     unsafe {
-        let p_obj = handle as *mut OfxParam;
-        match *p_obj {
-            OfxParam::Int1(ref param) => {
-                let value: *mut i32 = data as *mut i32;
-                *value = param.default;
-            }
-            OfxParam::Int2(ref param) => {
-                let value: *mut i32 = data as *mut i32;
-                *value = param.default.0;
-                *value.offset(1) = param.default.1;
-            }
-            // OfxParam::Int3(_, _, _) => 3,
-            // OfxParam::Double1(_) => 1,
-            // OfxParam::Double2(_, _) => 2,
-            // OfxParam::Double3(_, _, _) => 3,
-            // OfxParam::RGB(_, _, _) => 3,
-            // OfxParam::RGBA(_, _, _, _) => 4,
-            // OfxParam::String(_) => 1,
-            // OfxParam::Boolean(bool) => 1,
-            // OfxParam::Choice(_) => 1,
-            // OfxParam::Custom(_) => 1,
-            // OfxParam::PushButton(_) => 1,
-            // OfxParam::Group(_) => 1,
-            // OfxParam::Page(_) => 1,
-            _ => panic!("param get component for this type is not implemented yet"),
-        }
+        let param = handle as *mut OfxParam;
+        (*param).get_raw_data(data);
     }
 
 }
 
+/// This function is used in the C code to differentiate between
+/// integer, float, and string
 #[no_mangle]
 pub extern "C" fn param_get_type(handle: *mut c_void) -> u32 {
     let p_obj = handle as *mut OfxParam;
@@ -181,6 +166,7 @@ pub extern "C" fn param_get_type(handle: *mut c_void) -> u32 {
 }
 
 // TODO: return a pointer on a parameter
+// This is not in the rust spirit
 extern "C" fn param_get_handle(pset_ptr: OfxParamSetHandle,
                                name: *const c_char,
                                handle: *mut OfxParamHandle,
@@ -205,9 +191,9 @@ extern "C" fn param_get_handle(pset_ptr: OfxParamSetHandle,
     kOfxStatOK
 }
 
-extern "C" fn param_set_get_property_set(handle: OfxParamHandle,
-                                         pset: *mut OfxPropertySetHandle)
-                                         -> OfxStatus {
+extern "C" fn paramset_get_property_set(handle: OfxParamHandle,
+                                        pset: *mut OfxPropertySetHandle)
+                                        -> OfxStatus {
     kOfxStatOK
 }
 
@@ -301,7 +287,7 @@ extern "C" {
 pub static OFX_PARAMETER_SUITE_V1: OfxParameterSuiteV1 = OfxParameterSuiteV1 {
     paramDefine: param_define,
     paramGetHandle: param_get_handle,
-    paramSetGetPropertySet: param_set_get_property_set,
+    paramSetGetPropertySet: paramset_get_property_set,
     paramGetValue: param_get_value,
     paramGetValueAtTime: param_get_value_at_time,
     paramGetDerivative: param_get_derivative,
@@ -318,8 +304,6 @@ pub static OFX_PARAMETER_SUITE_V1: OfxParameterSuiteV1 = OfxParameterSuiteV1 {
     paramEditEnd: param_edit_end,
 };
 
-#[cfg(test)]
-use std::ffi::{CString, CStr};
 
 #[cfg(test)]
 fn init_parameter_test() -> (*mut OfxParameterSet, CString, CString) {
