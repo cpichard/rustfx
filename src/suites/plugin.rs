@@ -1,11 +1,11 @@
 extern crate libc;
 use std::ffi::*;
 use libc::*;
-use bindings::core::*;
+use suites::core::*;
 use rfx::propertyset::*;
 use std::ptr;
 
-/// Rust <-> C OfxPlugin bindings
+/// Rust <-> C OfxPlugin suites
 ///
 #[repr(C)]
 #[derive(Clone, Debug)]

@@ -7,6 +7,6 @@ extern crate env_logger;
 #[macro_use]
 extern crate lazy_static;
 
-pub mod bindings;
+pub mod suites;
 pub mod rfx;
 

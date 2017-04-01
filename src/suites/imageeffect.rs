@@ -1,8 +1,8 @@
 use libc;
-use bindings::property::*;
+use suites::property::*;
 use rfx::effectnode::*;
-use bindings::param::*;
-use bindings::core::*;
+use suites::param::*;
+use suites::core::*;
 use std::mem;
 use std::ffi::{CString, CStr};
 use std::ops::DerefMut;

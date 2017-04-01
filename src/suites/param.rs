@@ -3,12 +3,12 @@ extern crate libc;
 use libc::*;
 use std::ffi::{CString, CStr};
 use rfx::paramset::*;
-use bindings::property::*;
-use bindings::core::*;
+use suites::property::*;
+use suites::core::*;
 use std::mem::*;
 use std::ptr;
 
-/// Rust <-> C bindings for parameters
+/// Rust <-> C suites for parameters
 
 pub type OfxParamSetHandle = *mut c_void;
 pub type OfxParamHandle = *mut c_void;
@@ -269,8 +269,8 @@ pub struct OfxParameterSuiteV1 {
 }
 
 
-/// We had to write C bindings cause rust doesn't handle varargs.
-#[link(name = "ofxhelpers")]
+/// We had to write C suites cause rust doesn't handle varargs.
+#[link(name = "ofxc")]
 extern "C" {
     fn param_get_value(param_set: OfxParamHandle, ...) -> OfxStatus;
     fn param_get_value_at_time(param_set: OfxParamHandle, time: OfxTime, ...) -> OfxStatus;

@@ -2,7 +2,7 @@
 name = "rustfx"
 version = "0.1.0"
 authors = ["cyril"]
-links = "ofxhelpers"
+links = "ofxc"
 build = "build.rs"
 
 [profile.dev]

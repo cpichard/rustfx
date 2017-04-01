@@ -2,7 +2,7 @@
 extern crate libc;
 use std::ffi::*;
 use std::convert::*;
-use bindings::core::*;
+use suites::core::*;
 use std::mem;
 use rfx::propertyset::*;
 use libc::*;

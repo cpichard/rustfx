@@ -1,6 +1,6 @@
 use libc::*;
-use bindings::core::*;
-use bindings::plugin::*;
+use suites::core::*;
+use suites::plugin::*;
 use std::env;
 use std::ffi::*;
 use std::fs::DirEntry;

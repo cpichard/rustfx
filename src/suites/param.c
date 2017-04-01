@@ -24,17 +24,6 @@ int c_test_host(void *host) {
     return 0;  
 }
 
-// TODO: handle message suite
-int c_message(void *handle, const char *messageType, const char * messageId, const char * format, ...)
-{
-    return kOfxStatOK;
-}
-
-// TODO: handle message suite
-int c_set_persistent_message(void *handle, const char *messageType, const char * messageId, const char * format, ...)
-{
-    return kOfxStatOK;
-}
 
 OfxStatus param_set_value (void *handle, ...) {
     va_list vaargs;

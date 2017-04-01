@@ -1,14 +1,14 @@
 extern crate libc;
 use libc::*;
-use bindings::property::*;
+use suites::property::*;
 use rfx::propertyset::*;
-use bindings::imageeffect::*;
-use bindings::progress::*;
-use bindings::param::*;
-use bindings::memory::*;
-use bindings::thread::*;
-use bindings::interact::*;
-use bindings::message::*;
+use suites::imageeffect::*;
+use suites::progress::*;
+use suites::param::*;
+use suites::memory::*;
+use suites::thread::*;
+use suites::interact::*;
+use suites::message::*;
 use std::mem;
 use std::ffi::*;
 use std::ptr;
@@ -126,7 +126,7 @@ impl OfxHost {
 }
 
 #[cfg(test)]
-#[link(name = "ofxhelpers")]
+#[link(name = "param")]
 extern "C" {
     fn c_test_host(host: *mut c_void) -> c_int;
 }

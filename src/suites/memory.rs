@@ -1,6 +1,6 @@
 extern crate libc;
 use libc::*;
-use bindings::core::*;
+use suites::core::*;
 
 // Handle is the effect instance
 extern "C" fn memory_alloc(handle: *mut libc::c_void,

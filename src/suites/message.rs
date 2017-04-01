@@ -1,7 +1,7 @@
 
 extern crate libc;
 use libc::*;
-use bindings::core::*;
+use suites::core::*;
 
 
 /*#include "ofxMessage.h"
@@ -21,7 +21,7 @@ typedef struct OfxMessageSuiteV2 {
 */
 
 // In C
-#[link(name = "ofxhelpers")]
+#[link(name = "ofxc")]
 extern { 
     fn c_message(handle: * mut c_void, message_type: * const c_char, message_id: * const c_char, format: * const c_char, ...) -> OfxStatus;
     fn c_set_persistent_message(handle: * mut c_void, message_type: * const c_char, message_id: * const c_char, format: * const c_char, ...) -> OfxStatus;

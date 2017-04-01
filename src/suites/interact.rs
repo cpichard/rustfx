@@ -1,8 +1,8 @@
 
 extern crate libc;
 use libc::*;
-use bindings::core::*;
-use bindings::property::*;
+use suites::core::*;
+use suites::property::*;
 
 /*
 typedef struct OfxInteractSuiteV1 {	

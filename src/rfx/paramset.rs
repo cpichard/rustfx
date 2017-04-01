@@ -1,7 +1,7 @@
 
 extern crate libc;
 use libc::*;
-use bindings::core::*;
+use suites::core::*;
 use std::ffi::*;
 use std::mem::*;
 use std::ptr;
@@ -146,7 +146,7 @@ impl OfxParameterSet {
         Box::new(pset)
     }
 
-    /// This function is used by the bindings to get a pointer to a parameter value
+    /// This function is used by the suites to get a pointer to a parameter value
     /// and be able to change it
     pub fn get_handle_and_prop(&mut self, p_name: *const c_char) -> (*mut c_void, *mut c_void) {
         let p_name_str = unsafe { CStr::from_ptr(p_name) }.to_owned();

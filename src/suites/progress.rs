@@ -1,6 +1,6 @@
 extern crate libc;
 use libc::{c_void, c_char, c_double};
-use bindings::core::*;
+use suites::core::*;
 
 // TODO: code progress suite
 

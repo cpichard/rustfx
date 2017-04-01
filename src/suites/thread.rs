@@ -1,7 +1,7 @@
 
 extern crate libc;
 use libc::*;
-use bindings::core::*;
+use suites::core::*;
 /* 
 #include "ofxMultiThread.h"
 typedef struct OfxMultiThreadSuiteV1 {
