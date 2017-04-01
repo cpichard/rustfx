@@ -2,6 +2,8 @@ extern crate libc;
 use libc::{c_void, c_char, c_double};
 use bindings::core::*;
 
+// TODO: code progress suite
+
 // handle is 
 extern fn progress_start(effect_instance:* mut c_void, label: * const c_char) -> OfxStatus {
     // TODO check there is no ongoing progress for this instance

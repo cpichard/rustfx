@@ -12,6 +12,10 @@ extern unsigned int param_get_type(void *handle);
 // TODO: pointer on different constant in this helper ?
 // To avoid allocating CStrings over and over
 
+// TODO: as this is mainly a parameter related wrapper, rename this file accordingly
+//       extract the message part to another file
+
+
 int c_test_host(void *host) {
     OfxHost *ofxHost = (OfxHost*)host;
     if(ofxHost->fetchSuite(ofxHost->host, "OfxPropertySuite", 1) == 0) {
@@ -54,6 +58,7 @@ OfxStatus param_set_value (void *handle, ...) {
         param_set_components(handle, &data[0]);
     } else {
         // error
+        // TODO: return correct error code and get rid of printf
         printf("error, parameter type unknown\n");
     }
 
@@ -85,7 +90,9 @@ OfxStatus param_get_value (void *handle, ...) {
         }
         param_set_components(handle, &data[0]);
     } else {
-        // error
+        //
+        // TODO return corresponding ofx error
+        //  va_end before returning
         printf("error, parameter type unknown\n");
     }
 
@@ -97,6 +104,7 @@ OfxStatus param_get_value_at_time (void *handle, OfxTime time, ...) {
     va_list vaargs;
     va_start(vaargs, time);
     printf("entering C compiled code\n");
+    // TODO:
     // cast handle
     //OfxParameterStruct *pstruct = (OfxParameterStruct *)handle;
     //@int nb_params = pstruct->get_nb_param();
@@ -111,10 +119,14 @@ OfxStatus param_get_value_at_time (void *handle, OfxTime time, ...) {
 
 OfxStatus param_get_derivative(void *param_handle, OfxTime time, ...) {
 
+    // TODO
+
     return kOfxStatOK;
 }
 
 OfxStatus param_get_integral(void *param_handle, OfxTime time1, OfxTime time2, ...) {
+
+    // TODO
 
     return kOfxStatOK;
 }
@@ -122,6 +134,8 @@ OfxStatus param_get_integral(void *param_handle, OfxTime time1, OfxTime time2, .
 
 OfxStatus param_set_value_at_time(void *param_handle, OfxTime time, ...) {
 
+    // TODO
+    //
     return kOfxStatOK;
 }
 

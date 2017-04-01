@@ -22,6 +22,8 @@ typedef struct OfxMultiThreadSuiteV1 {
 pub type OfxMutexHandle = * mut c_void;
 pub type OfxThreadFunctionV1 = extern fn (); // TODO 
 
+
+// TODO: implement the thread suite
 pub extern fn multi_thread(func: OfxThreadFunctionV1, nb_thread: c_uint, custom_arg: * mut c_void) -> OfxStatus { kOfxStatOK }
 pub extern fn multi_thread_num_cpus(num_cpu: * mut c_uint) -> OfxStatus { kOfxStatOK }
 pub extern fn multi_thread_index(thread_index: * mut c_uint) -> OfxStatus { kOfxStatOK }
