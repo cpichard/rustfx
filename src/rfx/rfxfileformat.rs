@@ -1,17 +1,18 @@
+///
+/// RFX file format parser
+///
+
 use std::fs::File;
 use std::io::Read;
-use rfx::project::Project;
+use rfx::project::{Project, Node};
 use rfx::project::NodeHandle;
 use std::io::BufRead;
 use std::io::BufReader;
 use std::io::Error;
 use std::collections::HashMap;
 
-///
-/// RFX file format parser
-///
 
-// Commands recognized,
+/// Recognized commands 
 #[derive(Debug, PartialEq, Clone)]
 enum CommandType {
     Node = 0, // create node
@@ -224,20 +225,17 @@ impl<'a> Lexer<'a> {
     }
 }
 
-// Stores temporary parsing data
+/// Stores the content to parse 
 pub struct RfxFileFormat {
-    content: String, // line_bytes: usize,
+    content: String,
 }
 
 impl RfxFileFormat {
-
     /// Returns a new parser data
-    pub fn new(file: & mut File) -> RfxFileFormat {
+    pub fn new(file: &mut File) -> RfxFileFormat {
         let mut content: String = String::new();
         file.read_to_string(&mut content);
-        RfxFileFormat {
-            content: content,
-        }
+        RfxFileFormat { content: content }
     }
 
     /// Update a project with the content of the parsed file
@@ -247,12 +245,12 @@ impl RfxFileFormat {
         let mut lexer = Lexer::new(&self.content);
         loop {
             let token = lexer.next_token();
-            match token { // top level should be a command
+            match token { // at top level we should only find a command
                 Token::Command(c) => {
-                    println!("found command {:?}", c);
-                    // find command function (lexer, project)
-                    // but testing with node atm
-                    node(&mut lexer, &mut project);
+                    trace!("found command {:?}", c);
+                    if c == CommandType::Node {
+                        node(&mut lexer, &mut project);
+                    }
                 } 
                 Token::EOF => {
                     break;
@@ -270,36 +268,64 @@ impl RfxFileFormat {
 ///
 /// Parse a node in the top level
 ///
-fn node(lexer: &mut Lexer, project: &mut Project) {
+fn node(lexer: &mut Lexer, mut project: &mut Project) {
     println!("node");
     // Expect a string literal which is the plugin name
     if let Token::StringLiteral(plugin_name) = lexer.next_token() {
-        let node_handle = project.new_node(&plugin_name);
-        println!("{:?}", node_handle);
+        // 
+        let mut node = project.node_new(&plugin_name);
+        let node_id = "test1".to_string(); // TODO
         // Once we have a new node, we can continue parsing in context or just returning
-        //
         match lexer.next_token() {
             Token::OpenBrace => {
                 // Parse commands in the node context
-                node_commands(lexer, project, &mut node_handle.unwrap())
+                node_commands(lexer, &mut project, &mut node);
             } 
             Token::SemiColon => {
-                return;
             }
             _ => {
                 panic!("syntax error, expecting ';' or '{'");
             }
         }
+        // TODO: get the name/id of the node from the commands ?
+        project.node_insert(node_id, node);
     } else {
         panic!("syntax error, expecting quoted string with the name of the plugin");
     }
 }
 
-fn node_commands(lexer: &mut Lexer, project: &mut Project, node: &mut NodeHandle) {
+///
+fn node_param(lexer: &mut Lexer, project: &mut Project, node: &mut NodeHandle, param_name: String) {
+
+    // internal parser state
+    // 0 => start
+    // 1 => found 1 int
+    // 2 => found 1 float
+
     loop {
+        // read parameter values until a semicolon is found
+        let t = lexer.next_token();
+    }
+}
+
+// TODO reduce the number of parameters
+fn node_commands(lexer: &mut Lexer, project: &mut Project, node: &mut Node) {
+    loop {
+        // read commands inside the context of a node
         let t = lexer.next_token();
         match t {
-            Token::CloseBrace => return,
+            Token::Command(CommandType::Param) => {
+                if let Token::StringLiteral(param_name) = lexer.next_token() {
+                    println!("param name {}", param_name);
+                    //node_param(lexer, node, param_name);
+
+                } else {
+                    panic!("expected string literal after param");
+                }
+            }
+            Token::CloseBrace => {
+                return;
+            }
             _ => {
                 println!("unexpected token {:?}", t);
                 return;
