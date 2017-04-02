@@ -1,12 +1,12 @@
 // Parameter suite
 extern crate libc;
 use libc::*;
-use std::ffi::{CString, CStr};
+use std::ffi::CStr;
 use rfx::paramset::*;
 use suites::property::*;
 use suites::core::*;
 use std::mem::*;
-use std::ptr;
+//use std::ptr;
 
 /// Rust <-> C suites for parameters
 
@@ -55,7 +55,7 @@ pub type ParamEditEndType = extern "C" fn(OfxParamSetHandle) -> OfxStatus;
 /// kOfxStatErrUnknown - if the type is unknown
 /// kOfxStatErrUnsupported - if the type is known but unsupported
 #[no_mangle]
-extern "C" fn param_define(pset_ptr: OfxParamSetHandle,
+pub extern "C" fn param_define(pset_ptr: OfxParamSetHandle,
                            p_type: *const c_char,
                            p_name: *const c_char,
                            props: *mut OfxPropertySetHandle)
@@ -180,14 +180,14 @@ extern "C" fn param_get_handle(pset_ptr: OfxParamSetHandle,
     }
     trace!("paramGetHandle {:?} in {:?}", name, pset_ptr);
     unsafe {
-        let mut param_set: &mut OfxParameterSet = transmute(pset_ptr);
-        let handle_and_prop = param_set.get_handle_and_prop(name);
-        *handle = handle_and_prop.0;
+        let mut paramset: &mut OfxParameterSet = transmute(pset_ptr);
+        let param_and_prop = paramset.param_and_prop_ptr(name);
+        *handle = param_and_prop.0;
         if !props.is_null() {
             // TODO : set properties
             // param : & OfxParam = transmute(handle);
-            warn!("setting prop {:?}", handle_and_prop.1);
-            *props = handle_and_prop.1;
+            warn!("setting prop {:?}", param_and_prop.1);
+            *props = param_and_prop.1;
         }
     }
     kOfxStatOK
@@ -306,7 +306,8 @@ pub static OFX_PARAMETER_SUITE_V1: OfxParameterSuiteV1 = OfxParameterSuiteV1 {
     paramEditEnd: param_edit_end,
 };
 
-
+#[cfg(test)]
+use std::ffi::CString;
 #[cfg(test)]
 fn init_parameter_test() -> (*mut OfxParameterSet, CString, CString) {
     let p_set = Box::into_raw(OfxParameterSet::new());

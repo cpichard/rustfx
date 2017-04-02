@@ -6,24 +6,27 @@ use std::fs::File;
 use std::io::Read;
 use rfx::project::{Project, Node};
 use rfx::project::NodeHandle;
-use std::io::BufRead;
-use std::io::BufReader;
-use std::io::Error;
+// use std::io::BufRead;
+// use std::io::BufReader;
+// use std::io::Error;
 use std::collections::HashMap;
+use std::ffi::CString;
 
 
-/// Recognized commands 
+/// Recognized commands
 #[derive(Debug, PartialEq, Clone)]
 enum CommandType {
-    Node = 0, // create node
+    Name = 0, // set name
+    Node, // create node
     Param, // set param
     Path, // plugin path
     Property, // set property
 }
 
 lazy_static! {
-    static ref CommandMap: HashMap<&'static str, CommandType> = {
+    static ref COMMAND_MAP: HashMap<&'static str, CommandType> = {
         let mut commands = HashMap::new();
+        commands.insert("name", CommandType::Name);
         commands.insert("node", CommandType::Node);
         commands.insert("param", CommandType::Param);
         commands.insert("path", CommandType::Path); // plugin path, likely to change
@@ -139,7 +142,7 @@ impl<'a> Lexer<'a> {
                     // Extract command string
                     let cmd_str = &self.input[self.begin..self.end];
                     // Find command
-                    match CommandMap.get(cmd_str) {
+                    match COMMAND_MAP.get(cmd_str) {
                         Some(cmd_enum) => {
                             // prepare exit
                             self.begin = self.end;
@@ -225,7 +228,7 @@ impl<'a> Lexer<'a> {
     }
 }
 
-/// Stores the content to parse 
+/// Stores the content to parse
 pub struct RfxFileFormat {
     content: String,
 }
@@ -234,7 +237,8 @@ impl RfxFileFormat {
     /// Returns a new parser data
     pub fn new(file: &mut File) -> RfxFileFormat {
         let mut content: String = String::new();
-        file.read_to_string(&mut content);
+        file.read_to_string(&mut content)
+            .unwrap_or_else(|_| panic!("unable to read content of the file"));
         RfxFileFormat { content: content }
     }
 
@@ -269,69 +273,98 @@ impl RfxFileFormat {
 /// Parse a node in the top level
 ///
 fn node(lexer: &mut Lexer, mut project: &mut Project) {
-    println!("node");
     // Expect a string literal which is the plugin name
     if let Token::StringLiteral(plugin_name) = lexer.next_token() {
-        // 
+        //
         let mut node = project.node_new(&plugin_name);
-        let node_id = "test1".to_string(); // TODO
+        let mut node_name = String::new();
+
         // Once we have a new node, we can continue parsing in context or just returning
         match lexer.next_token() {
             Token::OpenBrace => {
                 // Parse commands in the node context
-                node_commands(lexer, &mut project, &mut node);
+                node_name = node_commands(lexer, &mut node);
             } 
-            Token::SemiColon => {
-            }
+            Token::SemiColon => {}
             _ => {
                 panic!("syntax error, expecting ';' or '{'");
             }
         }
         // TODO: get the name/id of the node from the commands ?
-        project.node_insert(node_id, node);
+        project.node_insert(node_name, node);
     } else {
         panic!("syntax error, expecting quoted string with the name of the plugin");
     }
 }
 
-///
-fn node_param(lexer: &mut Lexer, project: &mut Project, node: &mut NodeHandle, param_name: String) {
+/// WIP
+fn node_param(lexer: &mut Lexer, node: &mut Node, param_name: String) {
 
-    // internal parser state
+    // internal parser state ??
     // 0 => start
     // 1 => found 1 int
     // 2 => found 1 float
-
+    let mut ints: [i32; 3] = [0; 3];
+    let mut idx: usize = 0;
     loop {
         // read parameter values until a semicolon is found
         let t = lexer.next_token();
+        match t {
+            Token::FloatNumber(_) => {
+                panic!("no float parameter yet");
+            } 
+            Token::IntNumber(n) => {
+                if idx > 2 {
+                    panic!("found more than 3 ints in parameter xxx, node xxx");
+                }
+                ints[idx] = n;
+                idx += 1;
+            }
+            Token::SemiColon => {
+                if idx == 1 {
+                    let c_param_name = CString::new(param_name.as_str()).unwrap();
+                    node.parameters().set_int1(&c_param_name, ints[0]);
+                }
+            }
+            _ => {
+                panic!("expected semicolon or xxxxx");
+            }
+
+        }
     }
 }
 
-// TODO reduce the number of parameters
-fn node_commands(lexer: &mut Lexer, project: &mut Project, node: &mut Node) {
+fn node_commands(lexer: &mut Lexer, node: &mut Node) -> NodeHandle {
+    let mut node_name: NodeHandle = String::new();
     loop {
         // read commands inside the context of a node
         let t = lexer.next_token();
         match t {
+            Token::Command(CommandType::Name) => {
+                if let Token::StringLiteral(node_name_) = lexer.next_token() {
+                    node_name = node_name_;
+                }
+                if Token::SemiColon != lexer.next_token() {
+                    panic!("expected semicolon after name");
+                }
+            }
             Token::Command(CommandType::Param) => {
                 if let Token::StringLiteral(param_name) = lexer.next_token() {
-                    println!("param name {}", param_name);
-                    //node_param(lexer, node, param_name);
-
+                    node_param(lexer, node, param_name);
                 } else {
                     panic!("expected string literal after param");
                 }
             }
             Token::CloseBrace => {
-                return;
+                break;
             }
             _ => {
                 println!("unexpected token {:?}", t);
-                return;
+                break;
             }
         }
     }
+    node_name
 }
 
 #[cfg(test)]
@@ -508,9 +541,33 @@ fn parse_unique_node() {
             let mut parser = RfxFileFormat::new(&mut file);
             project = parser.update_project(project);
             // read one node ?
-            assert!(project.nb_nodes() == 1);
+            assert!(project.node_qty() == 1);
             // get node and get its value
             // TODO test parameters
+        }
+        Err(_) => {
+            panic!("unable to open {:?}", &path);
+            assert!(false);
+        }
+    }
+}
+
+#[test]
+fn parse_two_named_nodes() {
+    let mut path = PathBuf::from(file!());
+    path.pop();
+    path.pop();
+    path.pop();
+    path.push("tests/projects/2.rfx");
+    match File::open(&path) {
+        Ok(mut file) => {
+            let mut project = Project::new();
+            let mut parser = RfxFileFormat::new(&mut file);
+            project = parser.update_project(project);
+            assert!(project.node_qty() == 2);
+            assert!(project.node_get("Gain.1".to_string()).is_some());
+            assert!(project.node_get("Gain.2".to_string()).is_some());
+            assert!(project.node_get("Gain.3".to_string()).is_none());
         }
         Err(_) => {
             panic!("unable to open {:?}", &path);

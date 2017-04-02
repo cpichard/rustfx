@@ -8,7 +8,7 @@ use rfx::rfxfileformat::RfxFileFormat;
 use std::path::PathBuf;
 use std::collections::HashMap;
 use std::fs::File;
-use std::ffi::{CString, CStr};
+//use std::ffi::{CString, CStr};
 
 pub type Node = EffectNode;
 pub type NodeHandle = String;
@@ -16,16 +16,18 @@ pub type ClipHandle = String;
 pub type NodeInput = (NodeHandle, ClipHandle);
 pub type NodeOutput = NodeHandle;
 
+// TODO
 pub fn next_id(id: &mut NodeHandle) {
+    // TODO
     // if the node ends with .x and x is a number, raise the number 
+    // else adds ".1" 
 }
 
 /// An rfx project contains the graph of image effect nodes
 /// used to process the images
 pub struct Project {
-    // NOTE: if performance is an issue, we can replace HashMap with Vec and
-    // have NodeHandle as an int. Using string is handy for debugging
-    // The same goes for connections
+    // TODO: Nodehandle should be unsigned int 
+    // and we store the nodes in a vector
     nodes: HashMap<NodeHandle, Node>,
 
     // Connections
@@ -35,8 +37,6 @@ pub struct Project {
     engine: Engine,
 }
 
-/// This would the principal "API" object exposed
-/// with simple function like load_project
 impl Project {
     pub fn new() -> Project {
         Project {
@@ -71,15 +71,26 @@ impl Project {
         self.nodes.insert(node_id.clone(), node);
         node_id
     }
-
-    pub fn get_input(&self,
-                     node_handle: &Option<NodeHandle>,
-                     clip_name: &String)
-                     -> Option<ClipHandle> {
-
-        // TODO return correct input
-        None
+    
+    /// Return a node by its unique name
+    pub fn node_get(&self, node_id: NodeHandle) -> Option<&Node> {
+        self.nodes.get(&node_id)
     }
+
+    /// Return the number of nodes in the graph
+    pub fn node_qty(&self) -> usize {
+        self.nodes.len()
+    }
+
+    // TODO
+    //pub fn get_input(&self,
+    //                 node_handle: &Option<NodeHandle>,
+    //                 clip_name: &String)
+    //                 -> Option<ClipHandle> {
+
+    //    // TODO return correct input
+    //    None
+    //}
 
     pub fn load_project(file_name: PathBuf) -> Project {
         // Read a file and re-construct a Project
@@ -95,7 +106,10 @@ impl Project {
             }
         }
     }
-    pub fn connect(&mut self,
+
+
+    // TODO: graph and node connection
+    pub fn node_connect(&mut self,
                    in_node: &Option<NodeHandle>,
                    out_node: &Option<NodeHandle>,
                    out_clip: &Option<ClipHandle>) {
@@ -111,9 +125,9 @@ impl Project {
             _ => println!("bb"), // TODO panic or warn ????
         }
     }
-    pub fn nb_nodes(&self) -> usize {
-        self.nodes.len()
-    }
+
+
+    // TODO: 
     // pub fn save_project(project: Project) {
     // }
 }

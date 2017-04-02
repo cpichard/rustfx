@@ -98,7 +98,7 @@ extern "C" fn clip_define(handle: OfxImageEffectHandle,
 
     // TODO: check if name is valid, and is not a null pointer
     let key: CString = unsafe { CStr::from_ptr(name).to_owned() };
-    unsafe { *props = image_effect.new_clip(key) };
+    unsafe { *props = image_effect.clip_new(key) };
     kOfxStatOK
 }
 

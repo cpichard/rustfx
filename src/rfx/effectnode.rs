@@ -4,37 +4,44 @@ use rfx::imageclip::*;
 use rfx::paramset::*;
 use std::collections::HashMap;
 use std::mem;
-use std::ffi::{CString, CStr};
+use std::ffi::CString;
 use std::ops::DerefMut;
 
 /// EffectNode contains all the data needed by an image effect.
 /// it is directly bound to the OFX api
 #[derive(Clone)]
 pub struct EffectNode {
-    props: *mut OfxPropertySet,
-    params: *mut OfxParameterSet,
+    props: Box<OfxPropertySet>,
+    params: Box<OfxParameterSet>,
     pub clips: HashMap<CString, Box<OfxImageClip>>,
 }
 
 impl EffectNode {
+
+    /// Creates a new effect node
     pub fn new() -> Self {
         EffectNode {
-            props: Box::into_raw(OfxPropertySet::new()),
-            params: Box::into_raw(OfxParameterSet::new()),
+            props: OfxPropertySet::new(),
+            params: OfxParameterSet::new(),
             clips: HashMap::new(),
         }
     }
+
+    /// Returns a pointer to the property container
+    /// It's used in the C plugin code
     pub unsafe fn properties_handle(&self) -> *mut libc::c_void {
-        self.props as *mut libc::c_void
+        mem::transmute(self.props.as_ref())
     }
 
+    /// Returns a pointer to the parameter container
+    /// It's used in the C plugin code
     pub unsafe fn parameter_handle(&self) -> *mut libc::c_void {
-        self.params as *mut libc::c_void
+        mem::transmute(self.params.as_ref())
     }
 
     // This returns the pointer on the clip props
     // TODO: this should go in another function
-    pub unsafe fn new_clip(&mut self, key: CString) -> *mut libc::c_void {
+    pub unsafe fn clip_new(&mut self, key: CString) -> *mut libc::c_void {
         let clip = OfxImageClip::new();
         self.clips.insert(key.clone(), Box::new(clip));
         // TODO: it doesn't look very efficient to query the map here
@@ -44,13 +51,8 @@ impl EffectNode {
         }
     }
 
-    // TODO : define the API for the internal node.
-    pub fn set_value(&mut self, key: &CString, value: CString) {
-        // depending on the key, convert the string representation to a value
-        // using pointer is not super handy
-        let param_set: &mut OfxParameterSet = unsafe { mem::transmute(self.params) };
-        // TODO param_set.set_value_literal(key, value);
+    pub fn parameters(&mut self) -> &mut OfxParameterSet {
+        self.params.deref_mut()
     }
+
 }
-
-

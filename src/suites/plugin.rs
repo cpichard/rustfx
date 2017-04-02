@@ -129,6 +129,7 @@ impl OfxPlugin {
     }
 }
 
+// TODO test the plugin api
 // #[test]
 // fn test_clone() {
 //
