@@ -8,7 +8,7 @@ use rfx::rfxfileformat::RfxFileFormat;
 use std::path::PathBuf;
 use std::collections::HashMap;
 use std::fs::File;
-//use std::ffi::{CString, CStr};
+// use std::ffi::{CString, CStr};
 
 pub type Node = EffectNode;
 pub type NodeHandle = String;
@@ -16,17 +16,32 @@ pub type ClipHandle = String;
 pub type NodeInput = (NodeHandle, ClipHandle);
 pub type NodeOutput = NodeHandle;
 
-// TODO
-pub fn next_id(id: &mut NodeHandle) {
-    // TODO
-    // if the node ends with .x and x is a number, raise the number 
-    // else adds ".1" 
+
+/// Return a new id
+/// ex: "Gain.2" == next_id("Gain.1");
+///     "Blur.1" == next_id("Blur");
+pub fn next_id(id: &NodeHandle) -> NodeHandle {
+    let mut prefix = id.clone();
+    let mut number_str = 1.to_string(); 
+
+    let split_string: Vec<&str> = id.rsplitn(2, '.').collect();
+    
+    if split_string.len() == 2 { // Found a '.' 
+        // try to convert
+        if let Ok(mut number) = split_string[0].parse::<i32>() {
+            number += 1;
+            number_str = number.to_string();
+            prefix = split_string[1].to_string();
+        }
+    }
+
+    prefix + "." + &number_str
 }
 
 /// An rfx project contains the graph of image effect nodes
 /// used to process the images
 pub struct Project {
-    // TODO: Nodehandle should be unsigned int 
+    // TODO: Nodehandle should be unsigned int
     // and we store the nodes in a vector
     nodes: HashMap<NodeHandle, Node>,
 
@@ -66,12 +81,12 @@ impl Project {
     /// Returns the choosen unique NodeHandle
     pub fn node_insert(&mut self, mut node_id: NodeHandle, node: Node) -> NodeHandle {
         while self.nodes.contains_key(&node_id) {
-            next_id(&mut node_id)
+            node_id = next_id(&mut node_id)
         }
         self.nodes.insert(node_id.clone(), node);
         node_id
     }
-    
+
     /// Return a node by its unique name
     pub fn node_get(&self, node_id: NodeHandle) -> Option<&Node> {
         self.nodes.get(&node_id)
@@ -83,14 +98,14 @@ impl Project {
     }
 
     // TODO
-    //pub fn get_input(&self,
+    // pub fn get_input(&self,
     //                 node_handle: &Option<NodeHandle>,
     //                 clip_name: &String)
     //                 -> Option<ClipHandle> {
 
     //    // TODO return correct input
     //    None
-    //}
+    // }
 
     pub fn load_project(file_name: PathBuf) -> Project {
         // Read a file and re-construct a Project
@@ -110,9 +125,9 @@ impl Project {
 
     // TODO: graph and node connection
     pub fn node_connect(&mut self,
-                   in_node: &Option<NodeHandle>,
-                   out_node: &Option<NodeHandle>,
-                   out_clip: &Option<ClipHandle>) {
+                        in_node: &Option<NodeHandle>,
+                        out_node: &Option<NodeHandle>,
+                        out_clip: &Option<ClipHandle>) {
         // TODO check connection validity
         match (in_node, out_node, out_clip) {
             (&Some(ref node_in), &Some(ref node_out), &Some(ref clip_out)) => {
@@ -127,7 +142,27 @@ impl Project {
     }
 
 
-    // TODO: 
+    // TODO:
     // pub fn save_project(project: Project) {
     // }
+}
+
+
+#[test]
+fn test_next_id() {
+    let mut id1 = "Gain.1".to_string();
+    id1 = next_id(&mut id1);
+    assert!(id1 == "Gain.2".to_string());
+
+    let mut id2 = "Gain".to_string();
+    id2 = next_id(&mut id2);
+    assert!(id2 == "Gain.1".to_string());
+
+    let mut id3 = "".to_string();
+    id3 = next_id(&mut id3);
+    assert!(id3 == ".1".to_string());
+
+    let mut id4 = "Gain.toto".to_string();
+    id4 = next_id(&mut id4);
+    assert!(id4 == "Gain.toto.1".to_string());
 }
