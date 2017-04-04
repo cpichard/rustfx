@@ -6,7 +6,6 @@ use rfx::paramset::*;
 use suites::property::*;
 use suites::core::*;
 use std::mem::*;
-//use std::ptr;
 
 /// Rust <-> C suites for parameters
 
@@ -308,6 +307,8 @@ pub static OFX_PARAMETER_SUITE_V1: OfxParameterSuiteV1 = OfxParameterSuiteV1 {
 
 #[cfg(test)]
 use std::ffi::CString;
+#[cfg(test)]
+use std::ptr;
 #[cfg(test)]
 fn init_parameter_test() -> (*mut OfxParameterSet, CString, CString) {
     let p_set = Box::into_raw(OfxParameterSet::new());
