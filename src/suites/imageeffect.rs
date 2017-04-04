@@ -46,7 +46,7 @@ pub type ImageMemoryLockType = extern "C" fn(OfxImageMemoryHandle, *mut *mut lib
                                              -> OfxStatus;
 pub type ImageMemoryUnlockType = extern "C" fn(OfxImageMemoryHandle) -> OfxStatus;
 
-extern "C" fn get_property_set(image_effect_ptr: OfxImageEffectHandle,
+extern "C" fn get_propertyset(image_effect_ptr: OfxImageEffectHandle,
                                prop_handle: *mut OfxPropertySetHandle)
                                -> OfxStatus {
     if !image_effect_ptr.is_null() {
@@ -62,7 +62,7 @@ extern "C" fn get_property_set(image_effect_ptr: OfxImageEffectHandle,
     }
 }
 
-extern "C" fn get_param_set(image_effect_ptr: OfxImageEffectHandle,
+extern "C" fn get_paramset(image_effect_ptr: OfxImageEffectHandle,
                             params: *mut OfxParamSetHandle)
                             -> OfxStatus {
     if !image_effect_ptr.is_null() && !params.is_null() {
@@ -149,10 +149,10 @@ extern "C" fn clip_get_handle(handle: OfxImageEffectHandle,
     }
 }
 
-extern "C" fn clip_get_property_set(handle: OfxImageClipHandle,
+extern "C" fn clip_get_propertyset(handle: OfxImageClipHandle,
                                     props: *mut OfxPropertySetHandle)
                                     -> OfxStatus {
-    error!("WILL PANIC: clip_get_property_set not implemented");
+    error!("WILL PANIC: clip_get_propertyset not implemented");
     panic!("unimplemented")
 }
 
@@ -196,7 +196,7 @@ extern "C" fn image_memory_lock(handle: OfxImageMemoryHandle,
 extern "C" fn image_memory_unlock(handle: OfxImageMemoryHandle) -> OfxStatus {
     panic!("unimplemented")
 }
-// pub type ClipGetPropertySetTypeI = typeof(clip_get_property_set);
+// pub type ClipGetPropertySetTypeI = typeof(clip_get_propertyset);
 
 #[repr(C)]
 #[allow(non_snake_case)]
@@ -222,11 +222,11 @@ pub struct OfxImageEffectSuiteV1 {
 
 
 pub static OFX_IMAGE_EFFECT_SUITE_V1: OfxImageEffectSuiteV1 = OfxImageEffectSuiteV1 {
-    getPropertySet: get_property_set,
-    getParamSet: get_param_set,
+    getPropertySet: get_propertyset,
+    getParamSet: get_paramset,
     clipDefine: clip_define,
     clipGetHandle: clip_get_handle,
-    clipGetPropertySet: clip_get_property_set,
+    clipGetPropertySet: clip_get_propertyset,
     clipGetImage: clip_get_image,
     clipReleaseImage: clip_release_image,
     clipGetRegionOfDefinition: clip_get_region_of_definition,
