@@ -177,14 +177,14 @@ fn test_property_set_and_get_string() {
 }
 
 #[cfg(test)]
-pub fn clone_keyword_test<'a>(value: &'a [u8]) -> *const c_char {
+pub fn clone_keyword_test<'a>(value: &'a [u8]) -> CString {
     let mut v: Vec<u8> = Vec::with_capacity(value.len());
     unsafe {
         v.set_len(value.len());
     }
     v.clone_from_slice(value);
     v.pop(); // removes \0
-    unsafe { CString::from_vec_unchecked(v).as_ptr() }
+    unsafe { CString::from_vec_unchecked(v) }
 }
 
 
@@ -205,10 +205,11 @@ fn test_property_set_and_get_c_char() {
     let uchar_buffer_key: &'static [u8] = b"uchar_buffer_key\0";
     let uchar_buffer_value: &'static [u8] = b"uchar_buffer_value\0";
     let key = kw_to_cstring_test(uchar_buffer_key);
-    properties.insert(key, 0, clone_keyword_test(uchar_buffer_value));
-    // let value_wrapper = PropertyValue::String();
-    // let key = kw_to_cstring_test(uchar_buffer_key);
-    // assert_eq!(properties.get(&key, 0), Some(&value_wrapper));
+    let new_value = clone_keyword_test(uchar_buffer_value);
+    properties.insert(key, 0, new_value.as_ptr());
+    let value_wrapper = PropertyValue::String(CString::new("uchar_buffer_value").unwrap());
+    let key = kw_to_cstring_test(uchar_buffer_key);
+    assert_eq!(properties.get(&key, 0), Some(&value_wrapper));
 }
 
 
