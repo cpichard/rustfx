@@ -271,7 +271,6 @@ pub struct OfxParameterSuiteV1 {
 
 
 /// We had to write C suites cause rust doesn't handle varargs.
-#[link(name = "ofxc")]
 extern "C" {
     fn param_get_value(param_set: OfxParamHandle, ...) -> OfxStatus;
     fn param_get_value_at_time(param_set: OfxParamHandle, time: OfxTime, ...) -> OfxStatus;
