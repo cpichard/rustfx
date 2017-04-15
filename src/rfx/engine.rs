@@ -132,9 +132,17 @@ impl Engine {
     }
 
     fn describe_capabilities() -> Box<OfxPropertySet> {
+        // TODO : add rustfx capabilities 
+        // the doc list all the capabilities that must be registered
+        // for the moment nothing is implemented,
         let mut properties = OfxPropertySet::new();
-        // TODO : add rustfx capabilities
         properties.insert("OfxImageEffectPropMultipleClipDepths", 0, 0);
+        // TODO: remove overlay and CustomAnimation capability
+        // We don't support overlay, it's just for testing the Custom plugin 
+        properties.insert("OfxImageEffectPropSupportsOverlays", 0, 1);
+        properties.insert("OfxParamHostPropSupportsCustomAnimation", 0, 1);
+        properties.insert(clone_keyword(kOfxImageEffectPropContext), 
+            0, keyword_ptr(kOfxImageEffectContextGeneral));
         properties
     }
 }
