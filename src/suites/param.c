@@ -69,7 +69,7 @@ OfxStatus param_get_value (void *handle, ...) {
         //
         // TODO return corresponding ofx error
         //  va_end before returning
-        printf("error, parameter type unknown\n");
+        printf("ERROR:param.c parameter type unknown\n");
     }
 
     va_end(vaargs);
@@ -79,15 +79,7 @@ OfxStatus param_get_value (void *handle, ...) {
 OfxStatus param_get_value_at_time (void *handle, OfxTime time, ...) {
     va_list vaargs;
     va_start(vaargs, time);
-    printf("entering C compiled code\n");
-    // TODO:
-    // cast handle
-    //OfxParameterStruct *pstruct = (OfxParameterStruct *)handle;
-    //@int nb_params = pstruct->get_nb_param();
-    //pstruct->param_get_3_int(pstruct, 1, 2, 3);
-    //for (; n; n--){
-    //    i = va_arg(ap, int);
-    //}
+    printf("ERROR:param.c param_get_value_at_time not implemented\n");
     va_end(vaargs);
     return kOfxStatOK;
 }
@@ -95,14 +87,15 @@ OfxStatus param_get_value_at_time (void *handle, OfxTime time, ...) {
 
 OfxStatus param_get_derivative(void *param_handle, OfxTime time, ...) {
 
-    // TODO
+    // TODO: implement get_derivative
+    printf("ERROR:param.c param_get_derivative not implemented\n");
 
     return kOfxStatOK;
 }
 
 OfxStatus param_get_integral(void *param_handle, OfxTime time1, OfxTime time2, ...) {
 
-    // TODO
+    // TODO implement get integral
 
     return kOfxStatOK;
 }
@@ -111,6 +104,7 @@ OfxStatus param_get_integral(void *param_handle, OfxTime time1, OfxTime time2, .
 OfxStatus param_set_value_at_time(void *param_handle, OfxTime time, ...) {
 
     // TODO
+    printf("ERROR:param.c param_set_value_at_time not implemented\n");
     //
     return kOfxStatOK;
 }

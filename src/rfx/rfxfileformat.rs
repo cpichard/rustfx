@@ -6,9 +6,6 @@ use std::fs::File;
 use std::io::Read;
 use rfx::project::{Project, Node};
 use rfx::project::NodeHandle;
-// use std::io::BufRead;
-// use std::io::BufReader;
-// use std::io::Error;
 use std::collections::HashMap;
 use std::ffi::CString;
 
@@ -24,6 +21,7 @@ enum CommandType {
 }
 
 lazy_static! {
+    // List of recognized commands
     static ref COMMAND_MAP: HashMap<&'static str, CommandType> = {
         let mut commands = HashMap::new();
         commands.insert("name", CommandType::Name);
@@ -229,6 +227,8 @@ impl<'a> Lexer<'a> {
 }
 
 /// Stores the content to parse
+/// For now storing the whole project file in a string is ok,
+/// we might have to used buffered read later on if the projects gets really big 
 pub struct RfxFileFormat {
     content: String,
 }
@@ -287,7 +287,7 @@ fn node(lexer: &mut Lexer, mut project: &mut Project) {
             } 
             Token::SemiColon => {}
             _ => {
-                panic!("syntax error, expecting ';' or '{'");
+                panic!("syntax error after node, expecting ';' or '{'");
             }
         }
         // TODO: get the name/id of the node from the commands ?
@@ -323,7 +323,8 @@ fn node_param(lexer: &mut Lexer, node: &mut Node, param_name: String) {
             Token::SemiColon => {
                 if idx == 1 {
                     let c_param_name = CString::new(param_name.as_str()).unwrap();
-                    node.parameters().set_int1(&c_param_name, ints[0]);
+                    let mut param = node.parameters().param_get(&c_param_name).unwrap();
+                    param.int1_set(ints[0]);
                 }
             }
             _ => {

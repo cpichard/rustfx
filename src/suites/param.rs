@@ -55,10 +55,10 @@ pub type ParamEditEndType = extern "C" fn(OfxParamSetHandle) -> OfxStatus;
 /// kOfxStatErrUnsupported - if the type is known but unsupported
 #[no_mangle]
 pub extern "C" fn param_define(pset_ptr: OfxParamSetHandle,
-                           p_type: *const c_char,
-                           p_name: *const c_char,
-                           props: *mut OfxPropertySetHandle)
-                           -> OfxStatus {
+                               p_type: *const c_char,
+                               p_name: *const c_char,
+                               props: *mut OfxPropertySetHandle)
+                               -> OfxStatus {
     // Test pointers nullness
     if pset_ptr.is_null() || p_type.is_null() || p_name.is_null() {
         error!("null pointer passed to param define");
@@ -77,7 +77,7 @@ pub extern "C" fn param_define(pset_ptr: OfxParamSetHandle,
 
     // Get the newly created parameter
     let p_name_str = unsafe { CStr::from_ptr(p_name) }.to_owned();
-    let found_param = unsafe { paramset.get_param(transmute(&p_name_str)) };
+    let found_param = unsafe { paramset.param_get(transmute(&p_name_str)) };
     if let Some(param) = found_param {
         if !props.is_null() {
             unsafe {
@@ -107,11 +107,11 @@ pub extern "C" fn param_get_nb_component(handle: *mut c_void) -> u32 {
             OfxParam::RGBA(_) => 4,
             OfxParam::String(_, _) => 1,
             OfxParam::Boolean(_, _) => 1,
-            OfxParam::Choice(_) => 1,
-            OfxParam::Custom(_) => 1,
-            OfxParam::PushButton(_) => 1,
-            OfxParam::Group(_) => 1,
-            OfxParam::Page(_) => 1,
+            OfxParam::Choice(_, _) => 1,
+            OfxParam::Custom(_, _) => 1,
+            OfxParam::PushButton(_, _) => 1,
+            OfxParam::Group(_, _) => 1,
+            OfxParam::Page(_, _) => 1,
         }
     }
 }
@@ -157,11 +157,11 @@ pub extern "C" fn param_get_type(handle: *mut c_void) -> u32 {
             OfxParam::RGBA(_) => 1,
             OfxParam::String(_, _) => 2,
             OfxParam::Boolean(_, _) => 0,
-            OfxParam::Choice(_) => 0,
-            OfxParam::Custom(_) => 0,
-            OfxParam::PushButton(_) => 0,
-            OfxParam::Group(_) => 0,
-            OfxParam::Page(_) => 0,
+            OfxParam::Choice(_, _) => 0,
+            OfxParam::Custom(_, _) => 0,
+            OfxParam::PushButton(_, _) => 0,
+            OfxParam::Group(_, _) => 0,
+            OfxParam::Page(_, _) => 0,
         }
     }
 }

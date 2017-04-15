@@ -18,7 +18,7 @@ pub enum PropertyValue {
 
 /// Properties are stored in a HashMap.
 /// For each key we store a vector of properties
-#[derive(Clone)]
+#[derive(Clone, Debug)]
 pub struct OfxPropertySet {
     props: HashMap<CString, Vec<PropertyValue>>,
 }

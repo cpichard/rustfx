@@ -1,4 +1,3 @@
-
 extern crate libc;
 use libc::*;
 use suites::core::*;
@@ -23,7 +22,7 @@ use std::ops::Deref;
 // page
 // parametric
 //
-#[derive(Default, Clone)]
+#[derive(Default, Clone, Debug)]
 pub struct KeyFramedParameter<T: Default + Clone> {
     pub properties: Box<OfxPropertySet>, // TODO: remove pub, move function in this module
     pub default: T,
@@ -33,7 +32,7 @@ pub struct KeyFramedParameter<T: Default + Clone> {
 /// Stores a parameter,
 /// FIXME: rust data type could be named rfxParameter to differentiate between ofx and rfx
 /// Find other field to add, like time, associated properties and so on
-#[derive(Clone)]
+#[derive(Clone, Debug)]
 pub enum OfxParam {
     Int1(KeyFramedParameter<i32>),
     Int2(KeyFramedParameter<(i32, i32)>),
@@ -45,12 +44,12 @@ pub enum OfxParam {
     RGBA(KeyFramedParameter<(f64, f64, f64, f64)>),
     String(CString, Box<OfxPropertySet>),
     Boolean(bool, Box<OfxPropertySet>),
-    Choice(i32), // FIXME: create the correct data needed
-    Custom(i32), // FIXME: create the correct associated data
-    PushButton(i32), // FIXME: create the correct data needed
-    Group(i32), // FIXME: create the correct data needed
-    Page(i32), /* FIXME: create the correct data needed
-                * Parametric(i32),  // FIXME: create the correct data needed */
+    Choice(i32, Box<OfxPropertySet>), // FIXME: create the correct data needed
+    Custom(i32, Box<OfxPropertySet>), // FIXME: create the correct associated data
+    PushButton(i32, Box<OfxPropertySet>), // FIXME: create the correct data needed
+    Group(i32, Box<OfxPropertySet>), // FIXME: create the correct data needed
+    Page(i32, Box<OfxPropertySet>), /* FIXME: create the correct data needed
+                                     * Parametric(i32),  // FIXME: create the correct data needed */
 }
 
 impl OfxParam {
@@ -64,12 +63,49 @@ impl OfxParam {
             OfxParam::Double3(ref val) => unsafe { transmute(val.properties.deref()) },
             OfxParam::RGB(ref val) => unsafe { transmute(val.properties.deref()) },
             OfxParam::RGBA(ref val) => unsafe { transmute(val.properties.deref()) },
-            // TODO String, Boolean, Choice, ...
-            _ => {
-                error!("no property for this type of parameter, returning null");
+            OfxParam::String(_, ref propertyset) => unsafe { transmute(propertyset.deref()) },
+            OfxParam::Boolean(_, ref propertyset) => unsafe { transmute(propertyset.deref()) },
+            OfxParam::Custom(_, ref propertyset) => unsafe { transmute(propertyset.deref()) },
+            OfxParam::Group(_, ref propertyset) => unsafe { transmute(propertyset.deref()) },
+            OfxParam::Page(_, ref propertyset) => unsafe { transmute(propertyset.deref()) },
+            // TODO Choice, ...
+            ref param @ _ => {
+                error!("property for {:?} is not implemented, returning null",
+                       param);
                 ptr::null_mut()
             }
         }
+    }
+
+    pub fn int1_set(&mut self, value: i32) {
+        // Should test for type here ??
+        unsafe {
+            self.set_raw_data(transmute(&value));
+        }
+    }
+
+    pub fn int1_get(&mut self) -> i32 {
+        // Should test for type here ??
+        let value: i32 = i32::default();
+        unsafe {
+            self.get_raw_data(transmute(&value));
+        }
+        value
+    }
+
+    pub fn int2_set(&mut self, v1: i32, v2: i32) {
+        let value: [i32; 2] = [v1, v2];
+        unsafe {
+            self.set_raw_data(transmute(&value));
+        }
+    }
+
+    pub fn int2_get(&mut self) -> [i32;2] {
+        let value: [i32; 2] = [0, 0];
+        unsafe {
+            self.get_raw_data(transmute(&value));
+        }
+        value
     }
 
     pub unsafe fn set_raw_data(&mut self, data: *mut c_void) {
@@ -81,7 +117,6 @@ impl OfxParam {
             OfxParam::Int2(ref mut param) => {
                 let value: *mut i32 = data as *mut i32;
                 param.default = (*value, *value.offset(1));
-                // *p_obj = OfxParam::Int2(*value, *value.offset(1));
             }
             // OfxParam::Int3(_, _, _) => 3,
             // OfxParam::Double1(_) => 1,
@@ -134,17 +169,21 @@ impl OfxParam {
 #[derive(Clone)]
 pub struct OfxParameterSet {
     pub data: HashMap<CString, OfxParam>,
+    pub propertyset: Box<OfxPropertySet>,
 }
 
 impl OfxParameterSet {
     /// Create a new ParameterSet on the heap
     pub fn new() -> Box<Self> {
-        let pset = OfxParameterSet { data: HashMap::new() };
-        Box::new(pset)
+        let paramset = OfxParameterSet {
+            data: HashMap::new(),
+            propertyset: Box::default(),
+        };
+        Box::new(paramset)
     }
 
     /// This function is used by the suites to get a pointer to the
-    /// parameter and property sets, they used as an handle 
+    /// parameter and property sets, they used as an handle
     pub unsafe fn param_and_prop_ptr(&mut self,
                                      c_param_name: *const c_char)
                                      -> (*mut c_void, *mut c_void) {
@@ -167,7 +206,9 @@ impl OfxParameterSet {
             "OfxParamTypeBoolean" => {
                 self.data.insert(param_name, OfxParam::Boolean(true, Box::default()))
             } 
-            "OfxParamTypeChoice" => self.data.insert(param_name, OfxParam::Choice(0)), 
+            "OfxParamTypeChoice" => {
+                self.data.insert(param_name, OfxParam::Choice(0, Box::default()))
+            } 
             "OfxParamTypeRGBA" => {
                 self.data.insert(param_name, OfxParam::RGBA(KeyFramedParameter::default()))
             } 
@@ -190,57 +231,22 @@ impl OfxParameterSet {
                 self.data.insert(param_name,
                                  OfxParam::String(CString::new("").unwrap(), Box::default()))
             }
-            "OfxParamTypeCustom" => self.data.insert(param_name, OfxParam::Custom(0)),
-            "OfxParamTypeGroup" => self.data.insert(param_name, OfxParam::Group(0)),
-            "OfxParamTypePage" => self.data.insert(param_name, OfxParam::Page(0)),
-            "OfxParamTypePushButton" => self.data.insert(param_name, OfxParam::PushButton(0)),
+            "OfxParamTypeCustom" => {
+                self.data.insert(param_name, OfxParam::Custom(0, Box::default()))
+            }
+            "OfxParamTypeGroup" => self.data.insert(param_name, OfxParam::Group(0, Box::default())),
+            "OfxParamTypePage" => self.data.insert(param_name, OfxParam::Page(0, Box::default())),
+            "OfxParamTypePushButton" => {
+                self.data.insert(param_name, OfxParam::PushButton(0, Box::default()))
+            }
             _ => None, 
         }
     }
 
-    /// Find the parameter or panic
-    pub fn get_param(&mut self, param_name: &CString) -> Option<&mut OfxParam> {
+    /// Find the parameter or nothing
+    // TODO: get_param -> param_get
+    pub fn param_get(&mut self, param_name: &CString) -> Option<&mut OfxParam> {
         self.data.get_mut(param_name)
-    }
-
-    ///
-    /// TODO: All those get set functions should go in the parameter struct 
-    ///
-    /// Change default value of a parameter
-    pub fn set_int1(&mut self, param_name: &CString, value: i32) {
-        // TODO: handle unwrap
-        let mut stored_value = self.data.get_mut(param_name).unwrap();
-        unsafe {
-            stored_value.set_raw_data(transmute(&value));
-        }
-    }
-
-    pub fn get_int1(&mut self, param_name: &CString) -> i32 {
-        let param = self.data.get_mut(param_name).unwrap();
-        let value: i32 = i32::default();
-        unsafe {
-            param.get_raw_data(transmute(&value));
-        }
-        value
-    }
-
-    pub fn set_int2(&mut self, param_name: &CString, v1: i32, v2: i32) {
-        // TODO: handle unwrap
-        let mut stored_value = self.data.get_mut(param_name).unwrap();
-        /// MOuahahahaahha... unsafe everywhere
-        let value: [i32; 2] = [v1, v2];
-        unsafe {
-            stored_value.set_raw_data(transmute(&value));
-        }
-    }
-
-    pub fn get_int2(&mut self, param_name: &CString) -> [i32; 2] {
-        let param = self.data.get_mut(param_name).unwrap();
-        let value: [i32; 2] = [0, 0];
-        unsafe {
-            param.get_raw_data(transmute(&value));
-        }
-        value
     }
 }
 
@@ -248,30 +254,28 @@ impl OfxParameterSet {
 // TESTS !!!
 //
 #[test]
-fn set_get_int1() {
+fn set_and_get_int1() {
     let mut paramset = OfxParameterSet::new();
-    let p_name = CString::new("test_parameter").unwrap();
-    paramset.create_param("OfxParamTypeInteger", p_name);
+    let param_name = CString::new("test_parameter").unwrap();
+    paramset.create_param("OfxParamTypeInteger", param_name.clone());
 
-    let p_name = CString::new("test_parameter").unwrap();
-    paramset.set_int1(&p_name, 3);
-
-    assert!(paramset.get_int1(&p_name) == 3);
+    let mut param = paramset.param_get(&param_name).unwrap();
+    param.int1_set(3);
+    assert!(param.int1_get() == 3);
 }
-
-// TODO return error message when the type is not correct
 
 #[test]
-fn set_get_int2() {
+fn set_and_get_int2() {
     let mut paramset = OfxParameterSet::new();
-    let p_name = CString::new("test_parameter").unwrap();
-    paramset.create_param("OfxParamTypeInteger2D", p_name);
+    let param_name = CString::new("test_parameter").unwrap();
+    paramset.create_param("OfxParamTypeInteger2D", param_name.clone());
 
-    let p_name = CString::new("test_parameter").unwrap();
-    paramset.set_int2(&p_name, 3, 1);
-    let ints = paramset.get_int2(&p_name);
-
-    println!("{:?}", ints);
-
-    assert!(ints[0] == 3 && ints[1] == 1);
+    let mut param = paramset.param_get(&param_name).unwrap();
+    param.int2_set(3, 400);
+    assert_eq!(param.int2_get(), [3, 400]);
+    param.int2_set(6789, -90);
+    assert_eq!(param.int2_get(), [6789, -90]);
 }
+
+
+// TODO test parameter properties
