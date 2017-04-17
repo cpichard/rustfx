@@ -57,6 +57,15 @@ fn load_custom_plugin() {
     assert!(engine.image_effect("uk.co.thefoundry.CustomParamPlugin").is_some());
 }
 
+
+#[test]
+fn load_rectangle_plugin() {
+    let mut engine = Engine::new();
+    engine.load_plugins(find_ofx_test_plugins());
+
+    assert!(engine.image_effect("uk.co.thefoundry.GeneratorExample").is_some());
+}
+
 // #[test]
 // fn list_plugins() {
 //

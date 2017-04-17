@@ -4,11 +4,11 @@ OFX\rectangle.ofx.bundle\Contents\Win64\rectangle.ofx: rectangle.ofx
 	if not exist "OFX\rectangle.ofx.bundle\Contents\Win64\" mkdir OFX\rectangle.ofx.bundle\Contents\Win64;
 	move rectangle.ofx OFX\rectangle.ofx.bundle\Contents\Win64\
 
-rectangle.ofx: rectangle.o
-	link.exe /DLL /OUT:rectangle.ofx rectangle.o 
+rectangle.ofx: rectangle.obj
+	link.exe /WHOLEARCHIVE /DLL /OUT:rectangle.ofx rectangle.obj 
 
-rectangle.o : rectangle.cpp ofxUtilities.hpp
-	cl.exe /I ..\..\src\include /c rectangle.cpp /Forectangle.o
+rectangle.obj: rectangle.cpp ofxUtilities.hpp
+	cl.exe /EHsc /DWIN64=1 /I ..\..\src\include /c rectangle.cpp /Forectangle.obj
 
 OFX\basic.ofx.bundle\Contents\Win64\basic.ofx: basic.ofx
 	if not exist "OFX\basic.ofx.bundle\Contents\Win64\" mkdir OFX\basic.ofx.bundle\Contents\Win64;
@@ -18,29 +18,29 @@ basic.ofx: basic.obj
 	link.exe /WHOLEARCHIVE /DLL /OUT:basic.ofx basic.obj 
 
 basic.obj : basic.cpp ofxUtilities.hpp
-	cl.exe /DWIN64=1 /I ..\..\src\include /c basic.cpp /Fobasic.obj
+	cl.exe /EHsc /DWIN64=1 /I ..\..\src\include /c basic.cpp /Fobasic.obj
 
 
 OFX\invert.ofx.bundle\Contents\Win64\invert.ofx: invert.ofx
 	if not exist "OFX\invert.ofx.bundle\Contents\Win64\" mkdir OFX\invert.ofx.bundle\Contents\Win64;
 	move invert.ofx OFX\invert.ofx.bundle\Contents\Win64\
 
-invert.ofx: invert.o
-	link.exe /WHOLEARCHIVE /DLL /OUT:invert.ofx invert.o 
+invert.ofx : invert.obj
+	link.exe /WHOLEARCHIVE /DLL /OUT:invert.ofx invert.obj 
 
-invert.o : invert.cpp ofxUtilities.hpp
-	cl.exe /DWIN64=1 /I ..\..\src\include /c invert.cpp /Foinvert.o
+invert.obj: invert.cpp ofxUtilities.hpp
+	cl.exe /EHsc /DWIN64=1 /I ..\..\src\include /c invert.cpp /Foinvert.obj
 
 
 OFX\custom.ofx.bundle\Contents\Win64\custom.ofx: custom.ofx
 	if not exist "OFX\custom.ofx.bundle\Contents\Win64\" mkdir OFX\custom.ofx.bundle\Contents\Win64;
 	move custom.ofx OFX\custom.ofx.bundle\Contents\Win64\
 
-custom.ofx: custom.o
-	link.exe /WHOLEARCHIVE /DLL /OUT:custom.ofx custom.o opengl32.lib
+custom.ofx: custom.obj
+	link.exe /WHOLEARCHIVE /DLL /OUT:custom.ofx custom.obj opengl32.lib
 
-custom.o : custom.cpp ofxUtilities.hpp
-	cl.exe /DWIN64=1 /I ..\..\src\include /c custom.cpp /Focustom.o
+custom.obj: custom.cpp ofxUtilities.hpp
+	cl.exe /EHsc /DWIN64=1 /I ..\..\src\include /c custom.cpp /Focustom.obj
 
 clean:
-	del *.exp *.lib *.obj *.o
+	del *.exp *.lib *.obj
