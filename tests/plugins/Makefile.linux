@@ -9,7 +9,7 @@ OFX/basic.ofx.bundle/Contents/Linux-x86-64/basic.ofx: basic.o
 	mv basic.ofx $@ 
 
 basic.o: basic.cpp ofxUtilities.hpp
-	g++ -c -g -fvisibility=hidden -fPIC -I../../src/ofx basic.cpp -o basic.o
+	g++ -c -g -fvisibility=hidden -fPIC -I../../src/include basic.cpp -o basic.o
 
 
 OFX/custom.ofx.bundle/Contents/Linux-x86-64/custom.ofx: custom.o
@@ -18,7 +18,7 @@ OFX/custom.ofx.bundle/Contents/Linux-x86-64/custom.ofx: custom.o
 	mv custom.ofx $@ 
 
 custom.o: custom.cpp ofxUtilities.hpp
-	g++ -c -g -fvisibility=hidden -fPIC -I../../src/ofx custom.cpp -o custom.o
+	g++ -c -g -fvisibility=hidden -fPIC -I../../src/include custom.cpp -o custom.o
 
 OFX/invert.ofx.bundle/Contents/Linux-x86-64/invert.ofx: invert.o
 	g++ -shared invert.o -o invert.ofx
@@ -26,7 +26,7 @@ OFX/invert.ofx.bundle/Contents/Linux-x86-64/invert.ofx: invert.o
 	mv invert.ofx $@ 
 
 invert.o: invert.cpp ofxUtilities.hpp
-	g++ -c -g -fvisibility=hidden -fPIC -I../../src/ofx invert.cpp -o invert.o
+	g++ -c -g -fvisibility=hidden -fPIC -I../../src/include invert.cpp -o invert.o
 
 clean: 
 	rm *.o
