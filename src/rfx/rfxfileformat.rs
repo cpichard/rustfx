@@ -79,7 +79,7 @@ impl<'a> Lexer<'a> {
                     let cursor = &self.input[self.begin..self.input.len()];
                     if let Some(c) = cursor.chars().next() {
                         match c {
-                            ' ' | '\n' | '\t' => {
+                            ' ' | '\n' | '\t' | '\r' => {
                                 self.begin += 1;
                                 self.end = self.begin;
                                 continue;
@@ -121,8 +121,8 @@ impl<'a> Lexer<'a> {
                                 self.end += 1;
                                 continue;
                             }
-                            _ => {
-                                panic!("character not recognized");
+                            c @ _ => {
+                                panic!("character {} not recognized", c);
                             }
                         }
                     } else {

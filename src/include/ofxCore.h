@@ -49,7 +49,7 @@ Contains the core OFX architectural struct and function definitions. For more de
  * exported from a plug-in. This is OS/compiler dependent.
  */
 #if defined(WIN32) || defined(WIN64)
-	#define OfxExport extern __declspec(dllexport)
+	#define OfxExport extern "C" __declspec(dllexport)
 #else
 	#define OfxExport extern
 #endif

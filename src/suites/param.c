@@ -1,7 +1,7 @@
 #include "../include/ofxCore.h"
 #include <stdarg.h>
 #include <stdio.h>
-
+#include <assert.h>
 
 // Rust callbacks
 extern unsigned int param_get_nb_component(void *handle);
@@ -18,15 +18,16 @@ OfxStatus param_set_value (void *handle, ...) {
     
     const unsigned int nb = param_get_nb_component(handle);
     const unsigned int tp = param_get_type(handle); // replace by param_type_is_float/int/string
+    assert(nb<=8);
     if (tp==0) {
-        int data[nb];
+        int data[8];
         for (unsigned int i=0; i < nb; i++)
         {
             data[i] = va_arg(vaargs, int);
         }
         param_set_components(handle, &data[0]);
     } else if (tp==1) {
-        double data[nb];
+        double data[8];
         for (unsigned int i=0; i < nb; i++)
         {
             data[i] = va_arg(vaargs, double);
@@ -48,8 +49,9 @@ OfxStatus param_get_value (void *handle, ...) {
     
     const unsigned int nb = param_get_nb_component(handle);
     const unsigned int tp = param_get_type(handle); // replace by param_type_is_float/int/string
+    assert(nb<=8);
     if (tp==0) {
-        int data[nb];
+        int data[8];
         param_get_components(handle, &data[0]);
         for (unsigned int i=0; i < nb; i++)
         {
@@ -57,7 +59,7 @@ OfxStatus param_get_value (void *handle, ...) {
             *val = data[i];
         }
     } else if (tp==1) {
-        double data[nb];
+        double data[8];
         param_get_components(handle, &data[0]);
         for (unsigned int i=0; i < nb; i++)
         {

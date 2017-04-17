@@ -34,6 +34,10 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
   crafted piece of image processing software.
  */
 
+#if defined(WIN64) || defined(WIN32)
+#include <windows.h>
+#pragma commment(lib,"opengl32.lib")
+#endif
 
 #include <cstring>
 #include <cstdio>
