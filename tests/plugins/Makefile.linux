@@ -1,7 +1,14 @@
 
 # Only works on MacOS for now
-all:OFX/basic.ofx.bundle/Contents/Linux-x86-64/basic.ofx OFX/custom.ofx.bundle/Contents/Linux-x86-64/custom.ofx OFX/invert.ofx.bundle/Contents/Linux-x86-64/invert.ofx
+all:OFX/basic.ofx.bundle/Contents/Linux-x86-64/basic.ofx OFX/custom.ofx.bundle/Contents/Linux-x86-64/custom.ofx OFX/invert.ofx.bundle/Contents/Linux-x86-64/invert.ofx OFX/rectangle.ofx.bundle/Contents/Linux-x86-64/rectangle.ofx
 
+OFX/rectangle.ofx.bundle/Contents/Linux-x86-64/rectangle.ofx: rectangle.o
+	g++ -shared rectangle.o -o rectangle.ofx
+	mkdir -p OFX/rectangle.ofx.bundle/Contents/Linux-x86-64/
+	mv rectangle.ofx $@ 
+
+rectangle.o: rectangle.cpp ofxUtilities.hpp
+	g++ -c -g -fvisibility=hidden -fPIC -I../../src/include rectangle.cpp -o rectangle.o
 
 OFX/basic.ofx.bundle/Contents/Linux-x86-64/basic.ofx: basic.o
 	g++ -shared basic.o -o basic.ofx
