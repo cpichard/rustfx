@@ -95,7 +95,9 @@ impl Engine {
                 let ref mut description = plugin_info.1;
                 // Clone parameters to a new image effect, this is now 
                 // an "instance"
-                let image_effect = description.clone();
+                let mut image_effect = description.clone();
+                // This plugin will be used in a general context
+                image_effect.properties().insert(clone_keyword(kOfxImageEffectPropContext), 0, keyword_ptr(kOfxImageEffectContextGeneral));
                 let instance_ptr: *const c_void = unsafe { transmute(&image_effect) };
                 trace!("about to call plugin.action_describe_in_context");
                 // TODO: does action describe in context need an instance or an effect

@@ -212,6 +212,20 @@ fn test_property_set_and_get_c_char() {
     assert_eq!(properties.get(&key, 0), Some(&value_wrapper));
 }
 
+#[test]
+fn test_property_set_and_get_c_char_clone() {
+    let mut properties = OfxPropertySet::new();
+    let uchar_buffer_key: &'static [u8] = b"uchar_buffer_key\0";
+    let uchar_buffer_value: &'static [u8] = b"uchar_buffer_value\0";
+    let key = kw_to_cstring_test(uchar_buffer_key);
+    let new_value = clone_keyword_test(uchar_buffer_value);
+    properties.insert(key, 0, new_value.as_ptr());
+    let mut properties_cloned = properties.clone();
+    let value_wrapper = PropertyValue::String(CString::new("uchar_buffer_value").unwrap());
+    let key = kw_to_cstring_test(uchar_buffer_key);
+    assert_eq!(properties_cloned.get(&key, 0), Some(&value_wrapper));
+}
+
 
 #[test]
 fn test_property_set_and_get_multiple_integer() {
