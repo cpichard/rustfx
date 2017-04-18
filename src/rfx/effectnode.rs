@@ -55,4 +55,8 @@ impl EffectNode {
         self.params.deref_mut()
     }
 
+    pub fn properties(&mut self) -> &mut OfxPropertySet {
+        self.props.deref_mut()
+    }
+
 }
