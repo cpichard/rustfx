@@ -24,7 +24,7 @@ fn load_plugin_not_found() {
     env_logger::init().unwrap();
 
     let mut engine = Engine::new();
-    engine.load_plugins(find_ofx_test_plugins());
+    engine.plugins_load(find_ofx_test_plugins());
 
     assert!(engine.image_effect("plugins").is_none()); // not found
 }
@@ -34,7 +34,7 @@ fn load_basic_plugin() {
     // trace!("Initializing rustfx");
     // env_logger::init().unwrap();
     let mut engine = Engine::new();
-    engine.load_plugins(find_ofx_test_plugins());
+    engine.plugins_load(find_ofx_test_plugins());
 
     // TODO : load image_effect and double check information stored in the node
     let image_effect = engine.image_effect("uk.co.thefoundry.BasicGainPlugin");
@@ -44,7 +44,7 @@ fn load_basic_plugin() {
 #[test]
 fn load_invert_plugin() {
     let mut engine = Engine::new();
-    engine.load_plugins(find_ofx_test_plugins());
+    engine.plugins_load(find_ofx_test_plugins());
 
     assert!(engine.image_effect("uk.co.thefoundry.OfxInvertExample").is_some());
 }
@@ -52,7 +52,7 @@ fn load_invert_plugin() {
 #[test]
 fn load_custom_plugin() {
     let mut engine = Engine::new();
-    engine.load_plugins(find_ofx_test_plugins());
+    engine.plugins_load(find_ofx_test_plugins());
 
     assert!(engine.image_effect("uk.co.thefoundry.CustomParamPlugin").is_some());
 }
@@ -61,7 +61,7 @@ fn load_custom_plugin() {
 #[test]
 fn load_rectangle_plugin() {
     let mut engine = Engine::new();
-    engine.load_plugins(find_ofx_test_plugins());
+    engine.plugins_load(find_ofx_test_plugins());
 
     assert!(engine.image_effect("uk.co.thefoundry.GeneratorExample").is_some());
 }

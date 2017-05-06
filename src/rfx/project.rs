@@ -17,10 +17,11 @@ pub type NodeInput = (NodeHandle, ClipHandle);
 pub type NodeOutput = NodeHandle;
 
 
-/// Return a new id
+/// Returns a new id for the node, it basically prefix the name
+/// With a number or increase the number if there is already one
 /// ex: "Gain.2" == next_id("Gain.1");
 ///     "Blur.1" == next_id("Blur");
-pub fn next_id(id: &NodeHandle) -> NodeHandle {
+fn next_id(id: &NodeHandle) -> NodeHandle {
     let mut prefix = id.clone();
     let mut number_str = 1.to_string(); 
 
@@ -61,10 +62,13 @@ impl Project {
         }
     }
 
-    pub fn load_plugins(&mut self, bundle_paths: Vec<PathBuf>) {
-        self.engine.load_plugins(bundle_paths)
+    pub fn plugins_load(&mut self, bundle_paths: Vec<PathBuf>) {
+        self.engine.plugins_load(bundle_paths)
     }
 
+    pub fn plugins_list(&self){
+        println!("plugins: {:?}", self.engine.plugins_list()); 
+    }
 
     /// Create a new node and give it to the caller.
     /// If the plugin is not able to provide a node, this function
@@ -87,7 +91,7 @@ impl Project {
         node_id
     }
 
-    /// Return a node by its unique name
+    /// Returns a node by its unique name
     pub fn node_get(&self, node_id: NodeHandle) -> Option<&Node> {
         self.nodes.get(&node_id)
     }

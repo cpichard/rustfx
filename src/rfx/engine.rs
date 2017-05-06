@@ -29,9 +29,14 @@ impl Engine {
         engine
     }
 
+    pub fn plugins_list(&self) {
+        println!("{:?}", self.bundles);
+        println!("{:?}", self.plugins);
+    }
+
     // TODO: load_plugin should be update_plugin instead
     #[allow(non_upper_case_globals)]
-    pub fn load_plugins(&mut self, paths: Vec<PathBuf>) {
+    pub fn plugins_load(&mut self, paths: Vec<PathBuf>) {
         unsafe {
             trace!("ofx host passed to the plugin {:?}",
                    self.ofx_host as *const _);
@@ -133,11 +138,13 @@ impl Engine {
         }
     }
 
+    /// Fills a OfxPropertySet with the engine capabilities
     fn describe_capabilities() -> Box<OfxPropertySet> {
         // TODO : add rustfx capabilities 
         // the doc list all the capabilities that must be registered
         // for the moment nothing is implemented,
         let mut properties = OfxPropertySet::new();
+
         properties.insert("OfxImageEffectPropMultipleClipDepths", 0, 0);
         // TODO: remove overlay and CustomAnimation capability
         // We don't support overlay, it's just for testing the Custom plugin 
@@ -145,6 +152,44 @@ impl Engine {
         properties.insert("OfxParamHostPropSupportsCustomAnimation", 0, 1);
         properties.insert(kOfxImageEffectPropContext, 
             0, kOfxImageEffectContextGeneral);
+
+        properties.insert(kOfxImageEffectPropMultipleClipDepths, 0, 0);
+        //properties.insert(kOfxPropType, 0, kOfxTypeImageEffectInstance);
+        //properties.insert("OfxPropType", 0, kOfxTypeImageEffectInstance);
+        properties.insert(kOfxPropType, 0, "OfxTypeImageEffectInstance");
+        //properties.insert(kOfxPropName, 0, "rustfx");
+        //properties.insert(kOfxPropLabel, 0, "Rustfx batch");
+        //properties.insert(kOfxPropAPIVersion, 0, 1);
+        //properties.insert(kOfxPropAPIVersion, 1, 4);
+        //properties.insert(kOfxPropVersion, 0, 0);
+        //properties.insert(kOfxPropVersion, 1, 0);
+        //properties.insert(kOfxPropVersion, 3, 1);
+        //// TODO: remove overlay and CustomAnimation capability
+        //// We don't support overlay, it's just for testing the Custom plugin 
+//        properties.insert(kOfxImageEffectPropSupportsOverlays, 0, 1);
+//        properties.insert(kOfxParamHostPropSupportsCustomAnimation, 0, 1);
+        //properties.insert(kOfxImageEffectHostPropIsBackground, 0, 1);
+        //properties.insert(kOfxImageEffectPropSupportsMultiResolution, 0, 0);
+        //properties.insert(kOfxImageEffectPropSupportsTiles, 0, 0);
+        //properties.insert(kOfxImageEffectPropTemporalClipAccess, 0, 1);
+        //properties.insert(kOfxImageEffectPropSupportsMultipleClipDepths, 0, 0);
+        //properties.insert(kOfxImageEffectPropSupportsMultipleClipPARs, 0, 1);
+        //properties.insert(kOfxImageEffectPropSetableFrameRate, 0, 0);
+        //properties.insert(kOfxImageEffectPropSetableFielding, 0, 0);
+        //properties.insert(kOfxParamHostPropSupportsStringAnimation, 0, 0);
+        //properties.insert(kOfxParamHostPropSupportsCustomInteract, 0, 0);
+        //properties.insert(kOfxParamHostPropSupportsChoiceAnimation, 0, 0);
+        //properties.insert(kOfxParamHostPropSupportsBooleanAnimation, 0, 0);
+        //properties.insert(kOfxParamHostPropSupportsCustomAnimation, 0, 0);
+        //properties.insert(kOfxParamHostPropMaxParameters, 0, 1);
+        //properties.insert(kOfxParamHostPropMaxPages, 0, 1);
+        //properties.insert(kOfxImageEffectPropSupportedComponents, 0, kOfxImageComponentRGBA); 
+        //properties.insert(kOfxImageEffectPropSupportedComponents, 1, kOfxImageComponentRGB); 
+        //properties.insert(kOfxImageEffectPropSupportedContexts, 0, kOfxImageEffectContextGeneral);
+        //properties.insert(kOfxImageEffectPropSupportedContexts, 0, kOfxImageEffectContextFilter);
+        //properties.insert(kOfxParamHostPropPageRowColumnCount, 0, 1);
+        //properties.insert(kOfxParamHostPropPageRowColumnCount, 1, 1);
+
         properties
     }
 }

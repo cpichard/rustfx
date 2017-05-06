@@ -40,7 +40,7 @@ enum Token {
     Command(CommandType),
     SemiColon,
     StringLiteral(String),
-    FloatNumber(f32),
+    DoubleNumber(f64),
     IntNumber(i32),
     EOF,
 }
@@ -51,7 +51,7 @@ enum LexerState {
     Comment,
     StringLiteral,
     Integer,
-    Float,
+    Floating,
     Command,
 }
 
@@ -173,7 +173,7 @@ impl<'a> Lexer<'a> {
                                 continue;
                             }
                             '.' => {
-                                self.state = LexerState::Float;
+                                self.state = LexerState::Floating;
                                 self.end += 1;
                                 continue;
                             }
@@ -188,7 +188,7 @@ impl<'a> Lexer<'a> {
                     self.begin = self.end;
                     return Token::IntNumber(number.parse::<i32>().unwrap());
                 }
-                LexerState::Float => {
+                LexerState::Floating => {
                     let cursor = &self.input[self.end..self.input.len()];
                     if let Some(c) = cursor.chars().next() {
                         match c {
@@ -204,7 +204,7 @@ impl<'a> Lexer<'a> {
                     self.begin = self.end;
                     // TODO : the lexer captures string like 900.-40 which are not floats
                     //        => return an appropriate error
-                    return Token::FloatNumber(number.parse::<f32>().unwrap());
+                    return Token::DoubleNumber(number.parse::<f64>().unwrap());
                 }
                 LexerState::StringLiteral => {
                     let cursor = &self.input[self.end..self.input.len()];
@@ -228,7 +228,7 @@ impl<'a> Lexer<'a> {
 
 /// Stores the content to parse
 /// For now storing the whole project file in a string is ok,
-/// we might have to used buffered read later on if the projects gets really big 
+/// we might have to used buffered read later on if the projects gets really big
 pub struct RfxFileFormat {
     content: String,
 }
@@ -298,20 +298,31 @@ fn node(lexer: &mut Lexer, mut project: &mut Project) {
 }
 
 /// WIP
+/// Read default parameters
+/// this might change as the parameters must be animated
 fn node_param(lexer: &mut Lexer, node: &mut Node, param_name: String) {
 
     // internal parser state ??
     // 0 => start
     // 1 => found 1 int
     // 2 => found 1 float
+    // 3 => RGB ??? ambiguity !!
+    let c_param_name = CString::new(param_name.as_str()).unwrap();
+    let mut param_found = node.parameters().param_get(&c_param_name);
+    // FIXME: what to do if the param does not exists
     let mut ints: [i32; 3] = [0; 3];
+    let mut floats: [f64; 3] = [0f64; 3];
     let mut idx: usize = 0;
     loop {
         // read parameter values until a semicolon is found
         let t = lexer.next_token();
         match t {
-            Token::FloatNumber(_) => {
-                panic!("no float parameter yet");
+            Token::DoubleNumber(f) => {
+                if idx > 2 {
+                    panic!("found more than 3 floats in parameter xxx, node xxx");
+                }
+                floats[idx] = f;
+                idx += 1;
             } 
             Token::IntNumber(n) => {
                 if idx > 2 {
@@ -321,11 +332,11 @@ fn node_param(lexer: &mut Lexer, node: &mut Node, param_name: String) {
                 idx += 1;
             }
             Token::SemiColon => {
-                if idx == 1 {
-                    let c_param_name = CString::new(param_name.as_str()).unwrap();
-                    let mut param = node.parameters().param_get(&c_param_name).unwrap();
-                    param.int1_set(ints[0]);
+                match param_found {
+                    Some(ref mut param) => param.int_set(&ints),
+                    None => error!("skipping parameter"),
                 }
+                break; // return after a semicolon
             }
             _ => {
                 panic!("expected semicolon or xxxxx");
@@ -499,7 +510,7 @@ fn lexer_token_multiple_integer() {
 fn lexer_token_float() {
     let comment = "3102954.67".to_string();
     let mut lexer = Lexer::new(&comment);
-    assert!(lexer.next_token() == Token::FloatNumber(3102954.67));
+    assert!(lexer.next_token() == Token::DoubleNumber(3102954.67));
     assert!(lexer.next_token() == Token::EOF);
 }
 
@@ -507,8 +518,8 @@ fn lexer_token_float() {
 fn lexer_token_float_starting_with_zero() {
     let comment = "0.3102954 0.67".to_string();
     let mut lexer = Lexer::new(&comment);
-    assert!(lexer.next_token() == Token::FloatNumber(0.3102954));
-    assert!(lexer.next_token() == Token::FloatNumber(0.67));
+    assert!(lexer.next_token() == Token::DoubleNumber(0.3102954));
+    assert!(lexer.next_token() == Token::DoubleNumber(0.67));
     assert!(lexer.next_token() == Token::EOF);
 }
 
@@ -516,7 +527,7 @@ fn lexer_token_float_starting_with_zero() {
 fn lexer_token_negative_float() {
     let comment = "-3102954.67".to_string();
     let mut lexer = Lexer::new(&comment);
-    assert!(lexer.next_token() == Token::FloatNumber(-3102954.67));
+    assert!(lexer.next_token() == Token::DoubleNumber(-3102954.67));
     assert!(lexer.next_token() == Token::EOF);
 }
 
@@ -524,7 +535,7 @@ fn lexer_token_negative_float() {
 fn lexer_token_scientific_float() {
     let comment = "-314.67e10".to_string();
     let mut lexer = Lexer::new(&comment);
-    assert!(lexer.next_token() == Token::FloatNumber(-314.67e10));
+    assert!(lexer.next_token() == Token::DoubleNumber(-314.67e10));
     assert!(lexer.next_token() == Token::EOF);
     // TODO: quickcheck with float numbers
 }
@@ -569,6 +580,28 @@ fn parse_two_named_nodes() {
             assert!(project.node_get("Gain.1".to_string()).is_some());
             assert!(project.node_get("Gain.2".to_string()).is_some());
             assert!(project.node_get("Gain.3".to_string()).is_none());
+        }
+        Err(_) => {
+            panic!("unable to open {:?}", &path);
+            assert!(false);
+        }
+    }
+}
+
+#[test] // WIP
+fn parse_parameter_in_node() {
+    let mut path = PathBuf::from(file!());
+    path.pop();
+    path.pop();
+    path.pop();
+    path.push("tests/projects/3.rfx");
+    match File::open(&path) {
+        Ok(mut file) => {
+            let mut project = Project::new();
+            let mut parser = RfxFileFormat::new(&mut file);
+            project = parser.update_project(project);
+            assert!(project.node_qty() == 2);
+            assert!(project.node_get("Gain.1".to_string()).is_some());
         }
         Err(_) => {
             panic!("unable to open {:?}", &path);
