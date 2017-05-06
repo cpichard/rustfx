@@ -13,6 +13,47 @@ use std::mem;
 use std::ffi::*;
 use std::ptr;
 
+/// New type to store ofx keywords 
+#[derive(PartialEq, Eq)]
+pub struct OfxKeyword<'a>(&'a[u8]);
+
+//impl<'_> PartialEq for OfxKeyword<'_> {
+//    fn eq(& self, other: &OfxKeyword) -> bool {
+//        self.0.len() == other.0.len()
+//    }
+//}
+//
+//impl<'_> Eq for OfxKeyword<'_> {}
+
+impl<'a> From<*const c_char> for OfxKeyword<'a> {
+    fn from(value: *const c_char) -> Self {
+        let from_client = unsafe { CStr::from_ptr(value) };
+        OfxKeyword(from_client.to_bytes_with_nul())
+    }
+}
+
+impl<'a> Into<CString> for OfxKeyword<'a> {
+    fn into(self) -> CString {
+        let g = unsafe { CStr::from_bytes_with_nul_unchecked(self.0) };
+        g.to_owned()
+    }
+}
+
+impl<'a> Into<Vec<u8>> for OfxKeyword<'a> {
+    fn into(self) -> Vec<u8> {
+        let g = unsafe { CStr::from_bytes_with_nul_unchecked(self.0) };
+        g.to_owned().into_bytes()
+    }
+}
+
+impl<'a> Into<*const c_char> for OfxKeyword<'a> {
+    fn into(self) -> *const c_char {
+        let j = unsafe { CStr::from_bytes_with_nul_unchecked(self.0) };
+        j.as_ptr()
+    }
+}
+
+
 // We include all the static constants which were translated
 // from the openfx include files.
 include!("constants.rs");
@@ -21,6 +62,8 @@ include!("constants.rs");
 // const kOfxPropertySuite : &'static str = "OfxPropertySuite";
 pub const kOfxGetNumberOfPlugins: &'static str = "OfxGetNumberOfPlugins";
 pub const kOfxGetPlugin: &'static str = "OfxGetPlugin";
+
+
 
 /// Utility to convert from a const char pointer received from the client
 /// to a u8 buffer
@@ -94,15 +137,16 @@ extern "C" fn fetch_suite(host: OfxPropertySetHandle,
     if suite_name.is_null() {
         panic!("the plugin asked for a null suite");
     }
-    match to_keyword(suite_name) {
-        kOfxPropertySuite => unsafe { mem::transmute(&OFX_PROPERTY_SUITE_V1) },
-        kOfxImageEffectSuite => unsafe { mem::transmute(&OFX_IMAGE_EFFECT_SUITE_V1) },
-        kOfxParameterSuite => unsafe { mem::transmute(&OFX_PARAMETER_SUITE_V1) },
-        kOfxProgressSuite => unsafe { mem::transmute(&OFX_PROGRESS_SUITE_V1) },
-        kOfxMemorySuite => unsafe { mem::transmute(&OFX_MEMORY_SUITE_V1) },
-        kOfxMultiThreadSuite => unsafe { mem::transmute(&OFX_MULTITHREAD_SUITE_V1) },
-        kOfxInteractSuite => unsafe { mem::transmute(&OFX_INTERACT_SUITE_V1) }, 
-        kOfxMessageSuite => unsafe { mem::transmute(&OFX_MESSAGE_SUITE_V2) },
+    match OfxKeyword::from(suite_name) {
+        ref e @ OfxKeyword(_) if *e == kOfxPropertySuite => unsafe { mem::transmute(&OFX_PROPERTY_SUITE_V1) },
+        ref e @ OfxKeyword(_) if *e == kOfxPropertySuite => unsafe { mem::transmute(&OFX_PROPERTY_SUITE_V1) },
+        ref e @ OfxKeyword(_) if *e == kOfxImageEffectSuite => unsafe { mem::transmute(&OFX_IMAGE_EFFECT_SUITE_V1) },
+        ref e @ OfxKeyword(_) if *e == kOfxParameterSuite => unsafe { mem::transmute(&OFX_PARAMETER_SUITE_V1) },
+        ref e @ OfxKeyword(_) if *e == kOfxProgressSuite => unsafe { mem::transmute(&OFX_PROGRESS_SUITE_V1) },
+        ref e @ OfxKeyword(_) if *e == kOfxMemorySuite => unsafe { mem::transmute(&OFX_MEMORY_SUITE_V1) },
+        ref e @ OfxKeyword(_) if *e == kOfxMultiThreadSuite => unsafe { mem::transmute(&OFX_MULTITHREAD_SUITE_V1) },
+        ref e @ OfxKeyword(_) if *e == kOfxInteractSuite => unsafe { mem::transmute(&OFX_INTERACT_SUITE_V1) }, 
+        ref e @ OfxKeyword(_) if *e == kOfxMessageSuite => unsafe { mem::transmute(&OFX_MESSAGE_SUITE_V2) },
         _ => {
             let suite_cstr = unsafe { CStr::from_ptr(suite_name) };
             let suite_str = suite_cstr.to_str().unwrap();

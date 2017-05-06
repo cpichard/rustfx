@@ -97,7 +97,7 @@ impl Engine {
                 // an "instance"
                 let mut image_effect = description.clone();
                 // This plugin will be used in a general context
-                image_effect.properties().insert(clone_keyword(kOfxImageEffectPropContext), 0, keyword_ptr(kOfxImageEffectContextGeneral));
+                image_effect.properties().insert(kOfxImageEffectPropContext, 0, kOfxImageEffectContextGeneral);
                 let instance_ptr: *const c_void = unsafe { transmute(&image_effect) };
                 trace!("about to call plugin.action_describe_in_context");
                 // TODO: does action describe in context need an instance or an effect
@@ -143,8 +143,8 @@ impl Engine {
         // We don't support overlay, it's just for testing the Custom plugin 
         properties.insert("OfxImageEffectPropSupportsOverlays", 0, 1);
         properties.insert("OfxParamHostPropSupportsCustomAnimation", 0, 1);
-        properties.insert(clone_keyword(kOfxImageEffectPropContext), 
-            0, keyword_ptr(kOfxImageEffectContextGeneral));
+        properties.insert(kOfxImageEffectPropContext, 
+            0, kOfxImageEffectContextGeneral);
         properties
     }
 }

@@ -57,7 +57,7 @@ impl OfxPlugin {
     // This action will not be called again while the binary containing the plug-in remains loaded.
     pub fn action_load(&self) -> OfxStatus {
         trace!("action load");
-        (self.mainEntry)(keyword_ptr(kOfxActionLoad),
+        (self.mainEntry)(kOfxActionLoad.into(),
                          ptr::null_mut(),
                          ptr::null_mut(),
                          ptr::null_mut())
@@ -68,7 +68,7 @@ impl OfxPlugin {
     // may have created.
     pub fn action_unload(&self) -> OfxStatus {
         trace!("action unload");
-        (self.mainEntry)(keyword_ptr(kOfxActionUnload),
+        (self.mainEntry)(kOfxActionUnload.into(),
                          ptr::null_mut(),
                          ptr::null_mut(),
                          ptr::null_mut())
@@ -80,7 +80,7 @@ impl OfxPlugin {
     // for future reference until the plug-in is unloaded.
     pub fn action_describe(&mut self, plug_desc_ptr : *const c_void) -> OfxStatus {
         trace!("plugin descriptor is {:?}", plug_desc_ptr as *const _);
-        (self.mainEntry)(keyword_ptr(kOfxActionDescribe),
+        (self.mainEntry)(kOfxActionDescribe.into(),
                          plug_desc_ptr, // check plug_desc_ptr is not needed after this call
                          ptr::null_mut(),
                          ptr::null_mut())
@@ -100,13 +100,13 @@ impl OfxPlugin {
 
         // Set the context for the plugin
         let mut prop_set = OfxPropertySet::new();
-        prop_set.insert(clone_keyword(kOfxImageEffectPropContext),
+        prop_set.insert(kOfxImageEffectPropContext,
                         0,
-                        keyword_ptr(kOfxImageEffectContextGeneral));
+                        kOfxImageEffectContextGeneral);
         // TODO check the plugin is not keeping this property set as it will
         // surely be detroyed after this function returns
 
-        (self.mainEntry)(keyword_ptr(kOfxImageEffectActionDescribeInContext),
+        (self.mainEntry)(kOfxImageEffectActionDescribeInContext.into(),
                          plug_desc_ptr,
                          properties_ptr(prop_set),
                          ptr::null_mut())
@@ -122,7 +122,7 @@ impl OfxPlugin {
     // place before the create instance action is called.
     pub fn action_create_instance(&mut self, plug_desc_ptr : *const c_void ) -> OfxStatus {
         trace!("action_create_instance called {:?}", plug_desc_ptr);
-        (self.mainEntry)(keyword_ptr(kOfxActionCreateInstance), // create_instance_str.as_ptr(),
+        (self.mainEntry)(kOfxActionCreateInstance.into(), // create_instance_str.as_ptr(),
                                plug_desc_ptr,
                                ptr::null_mut(),
                                ptr::null_mut()) 
