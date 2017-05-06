@@ -1,12 +1,10 @@
 // Generated automatically from the openfx 1.3 include files 
 
 // unrecognized #define kOfxFlagInfiniteMax INT_MAX
-
-
 // unrecognized #define kOfxFlagInfiniteMin INT_MIN
 // unrecognized //#define kOfxOpenGLRenderSuite_ext		"OfxImageEffectOpenGLRenderSuite_ext"
-
 pub const kOfxActionBeginInstanceChanged: OfxKeyword<'static> = OfxKeyword(b"OfxActionBeginInstanceChanged\0");
+pub const kOfxImageEffectPropMultipleClipDepths: OfxKeyword<'static> = OfxKeyword(b"OfxImageEffectPropMultipleClipDepths\0");
 pub const kOfxActionBeginInstanceEdit: OfxKeyword<'static> = OfxKeyword(b"OfxActionBeginInstanceEdit\0");
 pub const kOfxActionCreateInstance: OfxKeyword<'static> = OfxKeyword(b"OfxActionCreateInstance\0");
 pub const kOfxActionDescribe: OfxKeyword<'static> = OfxKeyword(b"OfxActionDescribe\0");

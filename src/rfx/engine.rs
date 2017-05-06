@@ -156,7 +156,7 @@ impl Engine {
         properties.insert(kOfxImageEffectPropMultipleClipDepths, 0, 0);
         //properties.insert(kOfxPropType, 0, kOfxTypeImageEffectInstance);
         //properties.insert("OfxPropType", 0, kOfxTypeImageEffectInstance);
-        properties.insert(kOfxPropType, 0, "OfxTypeImageEffectInstance");
+        //properties.insert(kOfxPropType, 0, "OfxTypeImageEffectInstance");
         //properties.insert(kOfxPropName, 0, "rustfx");
         //properties.insert(kOfxPropLabel, 0, "Rustfx batch");
         //properties.insert(kOfxPropAPIVersion, 0, 1);
