@@ -1,0 +1,24 @@
+node "uk.co.thefoundry.BasicGainPlugin" {
+    name "Gain.1";
+    
+    /// too verbose ? need an extra command double3
+    param "scale" { 
+        double3 1.0 1.4 1.3;
+    }
+
+    /// if the param doesn't exists, we don't know if it is an RGB or 3 float
+    /// But we can have a default type "double"
+    param "scale" 1.0 1.4 1.3;
+    
+    /// Replace command param by extra commands double3 
+    /// less verbose but not nice to read
+    /// and double is implicitely a parameter, it could also be a property ??
+    double3 "scale" 1.0 1.4 1.3; 
+
+    ///
+    double 3 "scale" 1.0 1.4 1.3;
+
+    param "scale" {
+        double 3 1.0 1.4 1.6;
+    }
+}
