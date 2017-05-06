@@ -77,6 +77,21 @@ impl OfxParam {
         }
     }
 
+    pub fn int_set(&mut self, value: &[i32]) {
+        match *self {
+            OfxParam::Int1(ref mut param) => {
+                param.default = value[0];
+            }
+            OfxParam::Int2(ref mut param) => {
+                param.default = (value[0], value[1]);
+            }
+            OfxParam::Int3(ref mut param) => {
+                param.default = (value[0], value[1], value[2]);
+            }
+            _ => panic!("int_set: setting an int to a non int parameter"),
+        }
+    }
+
     pub fn int1_set(&mut self, value: i32) {
         // Should test for type here ??
         unsafe {
