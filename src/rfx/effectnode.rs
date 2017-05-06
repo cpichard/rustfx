@@ -9,7 +9,7 @@ use std::ops::DerefMut;
 
 /// EffectNode contains all the data needed by an image effect.
 /// it is directly bound to the OFX api
-#[derive(Clone)]
+#[derive(Clone, Debug)]
 pub struct EffectNode {
     props: Box<OfxPropertySet>,
     params: Box<OfxParameterSet>,

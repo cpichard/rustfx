@@ -166,7 +166,7 @@ impl OfxParam {
 }
 
 // Holds parameters. There is one OfxParameterSet per OfxImageEffect
-#[derive(Clone)]
+#[derive(Clone, Debug)]
 pub struct OfxParameterSet {
     pub data: HashMap<CString, OfxParam>,
     pub propertyset: Box<OfxPropertySet>,

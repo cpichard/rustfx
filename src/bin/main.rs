@@ -13,9 +13,9 @@ fn main() {
     // Get env OFX and list all the plugins specified in the path
     let mut project = Project::new();
     let bundle_paths = default_bundle_paths();
-    project.load_plugins(bundle_paths); // project.load_plugins() ??
+    project.plugins_load(bundle_paths); // project.plugins_load() ??
 
-
+    project.plugins_list();
     // Load project, graph of effects
     //let test_node = project.new_node("Test"); // not found
     //let checkerboard = project.new_node("tuttle.checkerboard"); // not found

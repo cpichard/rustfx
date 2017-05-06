@@ -29,9 +29,14 @@ impl Engine {
         engine
     }
 
+    pub fn plugins_list(&self) {
+        println!("{:?}", self.bundles);
+        println!("{:?}", self.plugins);
+    }
+
     // TODO: load_plugin should be update_plugin instead
     #[allow(non_upper_case_globals)]
-    pub fn load_plugins(&mut self, paths: Vec<PathBuf>) {
+    pub fn plugins_load(&mut self, paths: Vec<PathBuf>) {
         unsafe {
             trace!("ofx host passed to the plugin {:?}",
                    self.ofx_host as *const _);
