@@ -72,6 +72,13 @@ impl Default for Box<OfxPropertySet> {
     }
 }
 
+/// Conversion from a string slice to a PropertyValue
+impl<'a> From<&'a str> for PropertyValue {
+    fn from(value: &'a str) -> Self {
+        let cstr = CString::new(value).unwrap();
+        PropertyValue::String(cstr)
+    }
+}
 
 /// Functions to convert to PropertyValues
 impl From<*const c_void> for PropertyValue {
