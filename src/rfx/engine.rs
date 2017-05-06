@@ -102,7 +102,7 @@ impl Engine {
                 // an "instance"
                 let mut image_effect = description.clone();
                 // This plugin will be used in a general context
-                image_effect.properties().insert(clone_keyword(kOfxImageEffectPropContext), 0, keyword_ptr(kOfxImageEffectContextGeneral));
+                image_effect.properties().insert(kOfxImageEffectPropContext, 0, kOfxImageEffectContextGeneral);
                 let instance_ptr: *const c_void = unsafe { transmute(&image_effect) };
                 trace!("about to call plugin.action_describe_in_context");
                 // TODO: does action describe in context need an instance or an effect
@@ -144,6 +144,15 @@ impl Engine {
         // the doc list all the capabilities that must be registered
         // for the moment nothing is implemented,
         let mut properties = OfxPropertySet::new();
+
+        properties.insert("OfxImageEffectPropMultipleClipDepths", 0, 0);
+        // TODO: remove overlay and CustomAnimation capability
+        // We don't support overlay, it's just for testing the Custom plugin 
+        properties.insert("OfxImageEffectPropSupportsOverlays", 0, 1);
+        properties.insert("OfxParamHostPropSupportsCustomAnimation", 0, 1);
+        properties.insert(kOfxImageEffectPropContext, 
+            0, kOfxImageEffectContextGeneral);
+
         properties.insert(kOfxImageEffectPropMultipleClipDepths, 0, 0);
         //properties.insert(kOfxPropType, 0, kOfxTypeImageEffectInstance);
         //properties.insert("OfxPropType", 0, kOfxTypeImageEffectInstance);

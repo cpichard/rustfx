@@ -4,6 +4,7 @@ use std::convert::*;
 use std::collections::HashMap;
 use std::ffi::{CString, CStr};
 use libc::*;
+use suites::core::*;
 
 /// Container for a property value
 /// A property value can be either Pointer, Integer, Double, String or Undefined
@@ -94,6 +95,12 @@ impl From<*const c_char> for PropertyValue {
     fn from(value: *const c_char) -> Self {
         let c_str = unsafe { CStr::from_ptr(value) };
         PropertyValue::String(c_str.to_owned())
+    }
+}
+
+impl<'a> From<OfxKeyword<'a>> for PropertyValue {
+    fn from(value: OfxKeyword) -> Self {
+        PropertyValue::String(value.into())
     }
 }
 
