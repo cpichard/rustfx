@@ -134,7 +134,7 @@ extern fn get_property<T>(properties: OfxPropertySetHandle,
         }
     } else {
         error!("null property set or property name in get property");
-        kOfxStatErrBadHandle
+        kOfxStatErrUnknown
     }
 }
 
@@ -169,7 +169,7 @@ extern fn get_property_multiple<T>(properties: OfxPropertySetHandle,
         kOfxStatOK
     } else {
         error!("null property set or property name in get property");
-        kOfxStatErrBadHandle
+        kOfxStatErrUnknown
     }
 }
 
