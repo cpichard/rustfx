@@ -66,8 +66,8 @@ impl Project {
         self.engine.plugins_load(bundle_paths)
     }
 
-    pub fn plugins_list(&self){
-        println!("plugins: {:?}", self.engine.plugins_list()); 
+    pub fn plugins_list(&self) {
+        self.engine.plugins_list();
     }
 
     /// Create a new node and give it to the caller.
