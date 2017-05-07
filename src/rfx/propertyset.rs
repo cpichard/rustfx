@@ -13,12 +13,13 @@ pub enum PropertyValue {
     Pointer(*const c_void),
     Integer(c_int),
     Double(c_double),
-    String(*const c_char),
+    String(*const c_char), // TODO : differenciate between host and plugin allocated strings
     Undefined,
 }
 
-// TODO: drop for *const c_char
+// TODO: drop for internally allocated*const c_char
 
+/// Equality test: for *c_char, we compare the string
 impl PartialEq for PropertyValue {
     fn eq(&self, other: &Self) -> bool {
         if let PropertyValue::String(ref lhs) = *self {
@@ -52,6 +53,7 @@ impl PartialEq for PropertyValue {
     }
 }
 
+/// Trait to convert from a PropertyValue to an Ofx property value passed to a plugin
 pub trait ToOfxProperty<T> {
     fn from_ref(&self) -> T;
 }
