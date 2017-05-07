@@ -23,11 +23,12 @@ pub type NodeOutput = NodeHandle;
 ///     "Blur.1" == next_id("Blur");
 fn next_id(id: &NodeHandle) -> NodeHandle {
     let mut prefix = id.clone();
-    let mut number_str = 1.to_string(); 
+    let mut number_str = 1.to_string();
 
     let split_string: Vec<&str> = id.rsplitn(2, '.').collect();
-    
-    if split_string.len() == 2 { // Found a '.' 
+
+    if split_string.len() == 2 {
+        // Found a '.'
         // try to convert
         if let Ok(mut number) = split_string[0].parse::<i32>() {
             number += 1;
