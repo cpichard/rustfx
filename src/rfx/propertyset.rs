@@ -8,13 +8,52 @@ use suites::core::*;
 
 /// Container for a property value
 /// A property value can be either Pointer, Integer, Double, String or Undefined
-#[derive(Debug, PartialEq, Clone)]
+#[derive(Debug, Clone)]
 pub enum PropertyValue {
     Pointer(*const c_void),
     Integer(c_int),
-    Double(c_double), 
-    String(CString),
+    Double(c_double),
+    String(*const c_char),
     Undefined,
+}
+
+// TODO: drop for *const c_char
+
+impl PartialEq for PropertyValue {
+    fn eq(&self, other: &Self) -> bool {
+        if let PropertyValue::String(ref lhs) = *self {
+            if let PropertyValue::String(ref rhs) = *other {
+                // TODO test for null value
+                return unsafe { CStr::from_ptr(*lhs) == CStr::from_ptr(*rhs) };
+            } else {
+                return false;
+            }
+        } else if let PropertyValue::Integer(ref lhs) = *self {
+            if let PropertyValue::Integer(ref rhs) = *other {
+                return lhs == rhs;
+            } else {
+                return false;
+            }
+        } else if let PropertyValue::Double(ref lhs) = *self {
+            if let PropertyValue::Double(ref rhs) = *other {
+                return lhs == rhs;
+            } else {
+                return false;
+            }
+        } else if let PropertyValue::Pointer(ref lhs) = *self {
+            if let PropertyValue::Pointer(ref rhs) = *other {
+                return lhs == rhs;
+            } else {
+                return false;
+            }
+        } else {
+            false
+        }
+    }
+}
+
+pub trait ToOfxProperty<T> {
+    fn from_ref(&self) -> T;
 }
 
 /// Properties are stored in a HashMap.
@@ -76,7 +115,7 @@ impl Default for Box<OfxPropertySet> {
 impl<'a> From<&'a str> for PropertyValue {
     fn from(value: &'a str) -> Self {
         let cstr = CString::new(value).unwrap();
-        PropertyValue::String(cstr)
+        PropertyValue::String(cstr.into_raw())
     }
 }
 
@@ -88,20 +127,10 @@ impl From<*const c_void> for PropertyValue {
 }
 
 ///
-impl From<PropertyValue> for *const c_void {
-    fn from(value: PropertyValue) -> Self {
-        match value {
-            PropertyValue::Pointer(p) => p,
-            _ => panic!("wrong type: Pointer"),
-        }
-    }
-}
-
-///
 impl From<*const c_char> for PropertyValue {
     fn from(value: *const c_char) -> Self {
         let c_str = unsafe { CStr::from_ptr(value) };
-        PropertyValue::String(c_str.to_owned())
+        PropertyValue::String(c_str.to_owned().into_raw())
     }
 }
 
@@ -111,28 +140,9 @@ impl<'a> From<OfxKeyword<'a>> for PropertyValue {
     }
 }
 
-///
-impl From<PropertyValue> for *const c_char {
-    fn from(value: PropertyValue) -> Self {
-        match value {
-            PropertyValue::String(val) => val.as_ptr(),
-            _ => panic!("wrong type: String"),
-        }
-    }
-}
-
 impl From<c_double> for PropertyValue {
     fn from(value: c_double) -> Self {
         PropertyValue::Double(value)
-    }
-}
-
-impl From<PropertyValue> for c_double {
-    fn from(value: PropertyValue) -> Self {
-        match value {
-            PropertyValue::Double(value) => value,
-            _ => panic!("wrong type Double"),
-        }
     }
 }
 
@@ -142,11 +152,38 @@ impl From<c_int> for PropertyValue {
     }
 }
 
-impl From<PropertyValue> for c_int {
-    fn from(value: PropertyValue) -> Self {
-        match value {
+/// ToOfxProperty trait
+impl ToOfxProperty<*const c_void> for PropertyValue {
+    fn from_ref(&self) -> *const c_void {
+        match *self {
+            PropertyValue::Pointer(val) => val,
+            _ => panic!("wrong type Pointer"),
+        }
+    }
+}
+impl ToOfxProperty<c_int> for PropertyValue {
+    fn from_ref(&self) -> c_int {
+        match *self {
             PropertyValue::Integer(val) => val,
             _ => panic!("wrong type Integer"),
+        }
+    }
+}
+
+impl ToOfxProperty<c_double> for PropertyValue {
+    fn from_ref(&self) -> c_double {
+        match *self {
+            PropertyValue::Double(val) => val,
+            _ => panic!("wrong type Double"),
+        }
+    }
+}
+
+impl ToOfxProperty<*const c_char> for PropertyValue {
+    fn from_ref(&self) -> *const c_char {
+        match self {
+            &PropertyValue::String(ref val) => *val,
+            _ => panic!("wrong type String"),
         }
     }
 }
@@ -154,10 +191,6 @@ impl From<PropertyValue> for c_int {
 pub fn properties_ptr(props: Box<OfxPropertySet>) -> *mut c_void {
     Box::into_raw(props) as *mut c_void
 }
-// pub fn properties_ptr(props: OfxPropertySet) -> * mut c_void {
-//        // Box::into_raw(props) as *mut c_void
-//        props.as_ptr()
-// }
 
 
 #[test]
@@ -186,7 +219,7 @@ fn test_property_set_and_get_string() {
     let key = CString::new("Test").unwrap();
     let value = CString::new("test").unwrap();
     properties.insert(key.clone(), 0, value.as_ptr());
-    let value_wrapper = PropertyValue::String(value);
+    let value_wrapper = PropertyValue::String(value.into_raw());
     assert_eq!(properties.get(&key, 0), Some(&value_wrapper));
 }
 
@@ -221,7 +254,8 @@ fn test_property_set_and_get_c_char() {
     let key = kw_to_cstring_test(uchar_buffer_key);
     let new_value = clone_keyword_test(uchar_buffer_value);
     properties.insert(key, 0, new_value.as_ptr());
-    let value_wrapper = PropertyValue::String(CString::new("uchar_buffer_value").unwrap());
+    let value_wrapper =
+        PropertyValue::String(CString::new("uchar_buffer_value").unwrap().into_raw());
     let key = kw_to_cstring_test(uchar_buffer_key);
     assert_eq!(properties.get(&key, 0), Some(&value_wrapper));
 }
@@ -235,7 +269,8 @@ fn test_property_set_and_get_c_char_clone() {
     let new_value = clone_keyword_test(uchar_buffer_value);
     properties.insert(key, 0, new_value.as_ptr());
     let mut properties_cloned = properties.clone();
-    let value_wrapper = PropertyValue::String(CString::new("uchar_buffer_value").unwrap());
+    let value_wrapper =
+        PropertyValue::String(CString::new("uchar_buffer_value").unwrap().into_raw());
     let key = kw_to_cstring_test(uchar_buffer_key);
     assert_eq!(properties_cloned.get(&key, 0), Some(&value_wrapper));
 }

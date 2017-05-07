@@ -111,7 +111,7 @@ extern fn get_property<T>(properties: OfxPropertySetHandle,
                          property: * const c_char,
                          index: c_int,
                          dest: * mut T) -> OfxStatus
-    where PropertyValue: Into<T>, T: Clone 
+    where PropertyValue: ToOfxProperty<T>
 {
     if !property.is_null() && !properties.is_null() {
         let uindex = if index >= 0 {index as usize} else {
@@ -124,7 +124,7 @@ extern fn get_property<T>(properties: OfxPropertySetHandle,
         let props : & mut OfxPropertySet = unsafe { mem::transmute(properties) }; 
         match props.get(&key_cstring, uindex) {
             Some(prop) => { 
-                unsafe {*dest = (*prop).clone().into()};
+                unsafe {*dest = prop.from_ref()};
                 kOfxStatOK
             }
             None => {
@@ -143,7 +143,7 @@ extern fn get_property_multiple<T>(properties: OfxPropertySetHandle,
                          property: * const c_char,
                          count: c_int,
                          dest: * mut T) -> OfxStatus
-    where T: From<PropertyValue>, T: Clone 
+    where PropertyValue: ToOfxProperty<T>
 {
     if !property.is_null() && !properties.is_null() {
         let ucount = if count >= 0 {count as usize} else {
@@ -151,13 +151,13 @@ extern fn get_property_multiple<T>(properties: OfxPropertySetHandle,
             return kOfxStatErrBadIndex;
         }; 
         unsafe {
-            let key_cstr = CStr::from_ptr(property);
+            let key_cstr = CStr::from_ptr(property).to_owned();
             let key_cstring = key_cstr.to_owned(); // FIXME this is not efficient
             let inner_props : * mut OfxPropertySet = mem::transmute(properties);
             for i in 0..ucount {
                 match (*inner_props).get(&key_cstring, i) {
                     Some(prop) => {
-                        *dest.offset(i as isize) = T::from(prop.clone());
+                        *dest.offset(i as isize) = prop.from_ref();
                     }
                     None => {
                         error!("could not find key in get property multiple");
