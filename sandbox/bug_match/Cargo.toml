@@ -1,0 +1,7 @@
+[package]
+name = "bug_match"
+version = "0.1.0"
+authors = ["cyril <pichard.cyril@laposte.net>"]
+
+[dependencies]
+libc = "*"
