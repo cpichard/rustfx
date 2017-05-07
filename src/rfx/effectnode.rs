@@ -6,6 +6,7 @@ use std::collections::HashMap;
 use std::mem;
 use std::ffi::CString;
 use std::ops::DerefMut;
+use suites::core::*;
 
 /// EffectNode contains all the data needed by an image effect.
 /// it is directly bound to the OFX api
@@ -17,7 +18,6 @@ pub struct EffectNode {
 }
 
 impl EffectNode {
-
     /// Creates a new effect node
     pub fn new() -> Self {
         EffectNode {
@@ -59,4 +59,31 @@ impl EffectNode {
         self.props.deref_mut()
     }
 
+    /// Default properties of an effect node
+    pub fn set_default_properties(&mut self) {
+        self.props.insert(kOfxPropLabel, 0, "");
+        self.props.insert(kOfxPropShortLabel, 0, "");
+        self.props.insert(kOfxPropLongLabel, 0, "");
+        self.props.insert(kOfxImageEffectPluginPropGrouping, 0, "");
+        self.props.insert(kOfxPluginPropFilePath, 0, "");
+        self.props.insert(kOfxPropType, 0, kOfxTypeImageEffect);
+        self.props.insert(kOfxImageEffectPluginRenderThreadSafety,
+                          0,
+                          kOfxImageEffectRenderFullySafe);
+        self.props.insert(kOfxImageEffectPluginPropSingleInstance, 0, 0);
+        self.props.insert(kOfxImageEffectPluginPropHostFrameThreading, 0, 0);
+        self.props.insert(kOfxImageEffectPropSupportsMultiResolution, 0, 1);
+        self.props.insert(kOfxImageEffectInstancePropSequentialRender, 0, 0);
+        self.props.insert(kOfxImageEffectPropSupportsTiles, 0, 1);
+        self.props.insert(kOfxImageEffectPropTemporalClipAccess, 0, 0);
+        self.props.insert(kOfxImageEffectPluginPropFieldRenderTwiceAlways, 0, 1);
+        self.props.insert(kOfxImageEffectPropMultipleClipDepths, 0, 0);
+        self.props.insert(kOfxImageEffectPropSupportsMultipleClipPARs, 0, 0);
+        self.props.insert(kOfxImageEffectPluginPropOverlayInteractV1,
+                          0,
+                          0 as *const libc::c_void);
+        self.props.insert(kOfxImageEffectPropSupportedContexts, 0, "");
+        self.props.insert(kOfxImageEffectPropSupportedPixelDepths, 0, "");
+        self.props.insert(kOfxImageEffectPropClipPreferencesSlaveParam, 0, "");
+    }
 }

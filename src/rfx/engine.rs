@@ -55,7 +55,8 @@ impl Engine {
                 match plugin.action_load() {
                     kOfxStatOK | kOfxStatReplyDefault => {
                         trace!("action_load returned kOfxStatOk or kOfxStatReplyDefault");
-                        let plugin_desc = EffectNode::new();
+                        let mut plugin_desc = EffectNode::new();
+                        plugin_desc.set_default_properties();
                         let plug_desc_ptr: *const c_void = unsafe { transmute(&plugin_desc) };
                         // todo : store information returned by the plugin, like clips and
                         // parameters. Also store image_effect to avoid having it destroyed 
