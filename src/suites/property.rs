@@ -1,11 +1,11 @@
 // Property suite
 extern crate libc;
-use std::ffi::*;
+use std::ffi::{CStr, CString};
 use std::convert::*;
+use libc::*;
 use suites::core::*;
 use std::mem;
 use rfx::propertyset::*;
-use libc::*;
 
 /// Handles are passed to the C plugins, the void * type
 /// is C compatible type
@@ -233,7 +233,8 @@ use std::ptr;
 #[test]
 fn ofx_property_empty_set() {
     let prop_set = OfxPropertySet::new();
-    let prop_name = CString::new("TestProperty").unwrap().as_ptr();
+    let prop_name_cstr = CString::new("TestProperty").unwrap();
+    let prop_name = prop_name_cstr.as_ptr();
     let prop_set_ptr = Box::into_raw(prop_set) as * mut c_void;
     let value : i32 = 283839;
     let value_get : * const c_void = unsafe {mem::transmute(&value)};
@@ -246,7 +247,8 @@ fn ofx_property_empty_set() {
 #[test]
 fn ofx_property_set_and_get_pointer() {
     let prop_set = OfxPropertySet::new();
-    let prop_name = CString::new("TestProperty").unwrap().as_ptr();
+    let prop_name_cstr = CString::new("TestProperty").unwrap();
+    let prop_name = prop_name_cstr.as_ptr();
     let prop_set_ptr = Box::into_raw(prop_set) as * mut c_void;
     let value : i32 = 283839;
     let value_set : * const c_void = unsafe {mem::transmute(&value)};
@@ -262,7 +264,8 @@ fn ofx_property_set_and_get_pointer() {
 #[test]
 fn ofx_property_set_and_get_int() {
     let prop_set = OfxPropertySet::new();
-    let prop_name = CString::new("TestProperty").unwrap().as_ptr();
+    let prop_name_cstr = CString::new("TestProperty").unwrap();
+    let prop_name = prop_name_cstr.as_ptr();
     let prop_set_ptr = Box::into_raw(prop_set) as * mut c_void;
     let value_set : i32 = 37677;
     let value_get : i32 = 0;
@@ -276,7 +279,8 @@ fn ofx_property_set_and_get_int() {
 #[test]
 fn ofx_property_set_and_get_double() {
     let prop_set = OfxPropertySet::new();
-    let prop_name = CString::new("TestProperty").unwrap().as_ptr();
+    let prop_name_cstr = CString::new("TestProperty").unwrap();
+    let prop_name = prop_name_cstr.as_ptr();
     let prop_set_ptr = Box::into_raw(prop_set) as * mut c_void;
     let value_set : c_double = 37677.0;
     let value_get : c_double = 0.0;
@@ -290,9 +294,11 @@ fn ofx_property_set_and_get_double() {
 #[test]
 fn ofx_property_set_and_get_string() {
     let prop_set = OfxPropertySet::new();
-    let prop_name = CString::new("TestProperty").unwrap().as_ptr();
+    let prop_name_cstr = CString::new("TestProperty").unwrap();
+    let prop_name = prop_name_cstr.as_ptr();
     let prop_set_ptr = Box::into_raw(prop_set) as * mut c_void;
-    let value_set : * const c_char = CString::new("TestPropertyValue").unwrap().as_ptr();;
+    let value_set_cstr = CString::new("TestPropertyValue").unwrap();
+    let value_set : * const c_char = value_set_cstr.as_ptr();
     let value_get : * mut c_char = ptr::null_mut();
     unsafe {
         (OFX_PROPERTY_SUITE_V1.propSetString)(prop_set_ptr, prop_name, 0, value_set);
@@ -304,7 +310,8 @@ fn ofx_property_set_and_get_string() {
 #[test]
 fn ofx_property_set_and_get_multiple_int() {
     let prop_set = OfxPropertySet::new();
-    let prop_name = CString::new("TestProperty").unwrap().as_ptr();
+    let prop_name_cstr = CString::new("TestProperty").unwrap();
+    let prop_name = prop_name_cstr.as_ptr();
     let prop_set_ptr = Box::into_raw(prop_set) as * mut c_void;
     let value_set : [i32;3] = [37677, 677, 90];
     let value_get : [i32;3] = [0, 0, 0];

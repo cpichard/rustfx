@@ -1,7 +1,7 @@
 
 #[cfg(windows)] extern crate kernel32;
 
-use libc::*;
+use libc::{c_void, c_uint, dlopen, dlclose, dlsym, dlerror};
 use suites::core::*;
 use suites::plugin::*;
 use std::env;

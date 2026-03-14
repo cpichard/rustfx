@@ -3,6 +3,7 @@ extern crate log;
 extern crate env_logger;
 extern crate rustfx;
 use rustfx::rfx::engine::*;
+use rustfx::rfx::project::*;
 use rustfx::rfx::bundle::*;
 use std::path::PathBuf;
 use std::fs;
@@ -57,7 +58,6 @@ fn load_custom_plugin() {
     assert!(engine.image_effect("uk.co.thefoundry.CustomParamPlugin").is_some());
 }
 
-
 #[test]
 fn load_rectangle_plugin() {
     let mut engine = Engine::new();
@@ -66,7 +66,22 @@ fn load_rectangle_plugin() {
     assert!(engine.image_effect("uk.co.thefoundry.GeneratorExample").is_some());
 }
 
-// #[test]
-// fn list_plugins() {
-//
-// }
+use std::ffi::{CString, CStr};
+#[test]
+fn connect_plugins() {
+    let mut project = Project::new();
+    project.plugins_load(find_ofx_test_plugins());
+    let generator_effect = project.node_new("uk.co.thefoundry.GeneratorExample");
+    let generator_id = project.node_insert("Generator".to_string(), generator_effect);
+    let gain_effect = project.node_new("uk.co.thefoundry.BasicGainPlugin");
+    let gain_id = project.node_insert("Gain".to_string(), gain_effect);
+
+    let gain_clip = CString::new("Source").unwrap();
+
+    if project.node_input(&gain_id, &gain_clip).is_some() {
+        project.node_connect(&generator_id, &gain_id, &gain_clip);
+        // TODO: check connections
+    } else {
+        assert!(false); // TODO: comment
+    }
+}

@@ -4,8 +4,9 @@
 
 use std::fs::File;
 use std::io::Read;
-use rfx::project::{Project, Node};
-use rfx::project::NodeHandle;
+use rfx::project::Project;
+use rfx::effectnode::NodeHandle;
+use rfx::effectnode::Node;
 use std::collections::HashMap;
 use std::ffi::CString;
 
@@ -553,7 +554,7 @@ fn parse_unique_node() {
             let mut parser = RfxFileFormat::new(&mut file);
             project = parser.update_project(project);
             // read one node ?
-            assert!(project.node_qty() == 1);
+            assert!(project.node_len() == 1);
             // get node and get its value
             // TODO test parameters
         }
@@ -576,10 +577,13 @@ fn parse_two_named_nodes() {
             let mut project = Project::new();
             let mut parser = RfxFileFormat::new(&mut file);
             project = parser.update_project(project);
-            assert!(project.node_qty() == 2);
-            assert!(project.node_get("Gain.1".to_string()).is_some());
-            assert!(project.node_get("Gain.2".to_string()).is_some());
-            assert!(project.node_get("Gain.3".to_string()).is_none());
+            assert!(project.node_len() == 2);
+            let gain1 = "Gain.1".to_string();
+            let gain2 = "Gain.2".to_string();
+            let gain3 = "Gain.3".to_string();
+            assert!(project.node_get(&gain1).is_some());
+            assert!(project.node_get(&gain2).is_some());
+            assert!(project.node_get(&gain3).is_none());
         }
         Err(_) => {
             panic!("unable to open {:?}", &path);
@@ -600,8 +604,9 @@ fn parse_parameter_in_node() {
             let mut project = Project::new();
             let mut parser = RfxFileFormat::new(&mut file);
             project = parser.update_project(project);
-            assert!(project.node_qty() == 2);
-            assert!(project.node_get("Gain.1".to_string()).is_some());
+            assert!(project.node_len() == 2);
+            let gain1 = "Gain.1".to_string();
+            assert!(project.node_get(&gain1).is_some());
         }
         Err(_) => {
             panic!("unable to open {:?}", &path);

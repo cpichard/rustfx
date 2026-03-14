@@ -2,6 +2,7 @@ extern crate gcc;
 
 fn main() {
     //gcc::compile_library("libparam.a", &["src/suites/ofxhelpers.c"]);
+    // TODO add tests library ??
     gcc::Config::new()
         .file("src/suites/param.c")
         .file("src/suites/message.c")

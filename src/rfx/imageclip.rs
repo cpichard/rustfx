@@ -1,5 +1,7 @@
 use rfx::propertyset::*;
 
+type OfxImageClipHandle = String;
+
 #[derive(Clone, Debug)]
 pub struct OfxImageClip {
     // TODO move ImageClip where it belongs and fill with relevant code
@@ -8,6 +10,8 @@ pub struct OfxImageClip {
 
 impl OfxImageClip {
     pub fn new() -> Self {
-        OfxImageClip { props: OfxPropertySet::new() }
+        OfxImageClip { 
+            props: OfxPropertySet::new(),
+         }
     }
 }

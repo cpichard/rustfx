@@ -7,6 +7,9 @@ use suites::property::*;
 use suites::core::*;
 use std::mem::*;
 
+
+/// TODO: return kOfxOk in debug, not in release
+
 /// Rust <-> C suites for parameters
 
 pub type OfxParamSetHandle = *mut c_void;

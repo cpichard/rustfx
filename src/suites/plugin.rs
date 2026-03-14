@@ -1,6 +1,6 @@
 extern crate libc;
 use std::ffi::*;
-use libc::*;
+use libc::{c_void, c_char, c_int, c_uint};
 use suites::core::*;
 use rfx::propertyset::*;
 use std::ptr;

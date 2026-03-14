@@ -104,13 +104,12 @@ extern "C" fn clip_define(handle: OfxImageEffectHandle,
 
 /// Get the propery handle of the named input clip in the given instance
 /// Arguments
-/// imageEffect - an instance handle to the plugin
+/// handle - an instance handle to the plugin
 /// name - name of the clip, previously used in a clip define call
-/// clip - where to return the clip
-/// propertySet - if not null, the descriptor handle for a parameter's property set will be placed here.
+/// clip_handle - where to return the clip
+/// props - if not null, the descriptor handle for a parameter's property set will be placed here.
 ///
 /// The propertySet will have the same value as would be returned by OfxImageEffectSuiteV1::clipGetPropertySet
-///
 /// This return a clip handle for the given instance, note that this will m not be the same as the clip handle returned by clipDefine and will be distanct to clip handles in any other instance of the plugin.
 ///
 extern "C" fn clip_get_handle(handle: OfxImageEffectHandle,

@@ -96,6 +96,7 @@ impl OfxPropertySet {
             Some(prop_vector) => prop_vector.get(index),
             None => None,
         }
+        
     }
 
     /// Returns the number of properties for the key

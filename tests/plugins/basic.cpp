@@ -934,6 +934,7 @@ describeInContext( OfxImageEffectHandle  effect,  OfxPropertySetHandle inArgs)
 static OfxStatus
 describe(OfxImageEffectHandle  effect)
 {
+  char *label = 0;
   // first fetch the host APIs, this cannot be done before this call
   OfxStatus stat;
   DEBUG("basic.ofx:entering function describe with effect=%p\n", effect);
@@ -945,6 +946,8 @@ describe(OfxImageEffectHandle  effect)
   gPropHost->propGetInt(gHost->host, kOfxImageEffectPropSupportsMultipleClipDepths, 0, &gHostSupportsMultipleBitDepths);
   DEBUG("basic.ofx: propGetInt from %p with host parameter %p returned %d\n", gPropHost, gHost->host, gHostSupportsMultipleBitDepths);
 
+  gPropHost->propGetString(gHost->host, kOfxPropLabel, 0, &label);
+     DEBUG("HOST IS NAMED %s\n", label);
   // get the property handle for the plugin
   DEBUG("basic.ofx: getting property set %p on effect host suite %p\n", effect, gEffectHost);
   OfxPropertySetHandle effectProps=0;

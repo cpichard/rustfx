@@ -4,51 +4,24 @@
 
 use rfx::engine::*;
 use rfx::effectnode::*;
+use rfx::imageclip::*;
 use rfx::rfxfileformat::RfxFileFormat;
 use std::path::PathBuf;
 use std::collections::HashMap;
 use std::fs::File;
-// use std::ffi::{CString, CStr};
+use std::ffi::{CString, CStr};
 
-pub type Node = EffectNode;
-pub type NodeHandle = String;
-pub type ClipHandle = String;
-pub type NodeInput = (NodeHandle, ClipHandle);
-pub type NodeOutput = NodeHandle;
-
-
-/// Returns a new id for the node, it basically prefix the name
-/// With a number or increase the number if there is already one
-/// ex: "Gain.2" == next_id("Gain.1");
-///     "Blur.1" == next_id("Blur");
-fn next_id(id: &NodeHandle) -> NodeHandle {
-    let mut prefix = id.clone();
-    let mut number_str = 1.to_string();
-
-    let split_string: Vec<&str> = id.rsplitn(2, '.').collect();
-
-    if split_string.len() == 2 {
-        // Found a '.'
-        // try to convert
-        if let Ok(mut number) = split_string[0].parse::<i32>() {
-            number += 1;
-            number_str = number.to_string();
-            prefix = split_string[1].to_string();
-        }
-    }
-
-    prefix + "." + &number_str
-}
+// TODO: describe a node container impl
 
 /// An rfx project contains the graph of image effect nodes
 /// used to process the images
 pub struct Project {
-    // TODO: Nodehandle should be unsigned int
+    // TODO: NodeHandle should be unsigned int
     // and we store the nodes in a vector
     nodes: HashMap<NodeHandle, Node>,
 
-    // Connections
-    connections: HashMap<NodeOutput, Vec<NodeInput>>,
+    // TODO: should handles die with the node ?
+    wires: HashMap<NodeHandle, (NodeHandle, ClipHandle)>,
 
     // The host related code.
     engine: Engine,
@@ -58,11 +31,12 @@ impl Project {
     pub fn new() -> Project {
         Project {
             nodes: HashMap::new(),
-            connections: HashMap::new(),
+            wires: HashMap::new(),
             engine: Engine::new(),
         }
     }
 
+    /// Find and load the OFX plugins in bundle_path
     pub fn plugins_load(&mut self, bundle_paths: Vec<PathBuf>) {
         self.engine.plugins_load(bundle_paths)
     }
@@ -71,9 +45,9 @@ impl Project {
         self.engine.plugins_list();
     }
 
-    /// Create a new node and give it to the caller.
-    /// If the plugin is not able to provide a node, this function
-    /// returns a dummy node
+    /// Create a new node and return it to the caller.
+    /// If the plugin which should create the node is not found,
+    /// return a dummy node
     pub fn node_new(&mut self, from_plugin: &str) -> Node {
         let plugin_node = self.engine.image_effect(from_plugin);
         match plugin_node {
@@ -84,6 +58,7 @@ impl Project {
 
     /// Takes ownership of the node and insert it in the project
     /// Returns the choosen unique NodeHandle
+    /// This should be part of the "NodeContainer" impl
     pub fn node_insert(&mut self, mut node_id: NodeHandle, node: Node) -> NodeHandle {
         while self.nodes.contains_key(&node_id) {
             node_id = next_id(&mut node_id)
@@ -92,29 +67,22 @@ impl Project {
         node_id
     }
 
-    /// Returns a node by its unique name
-    pub fn node_get(&self, node_id: NodeHandle) -> Option<&Node> {
-        self.nodes.get(&node_id)
+    /// Returns a node by its unique id
+    pub fn node_get(&self, node_id: &NodeHandle) -> Option<&Node> {
+        self.nodes.get(node_id)
+    }
+
+    pub fn node_get_mut(&mut self, node_id: &NodeHandle) -> Option<&mut Node> {
+        self.nodes.get_mut(node_id)
     }
 
     /// Return the number of nodes in the graph
-    pub fn node_qty(&self) -> usize {
+    pub fn node_len(&self) -> usize {
         self.nodes.len()
     }
 
-    // TODO
-    // pub fn get_input(&self,
-    //                 node_handle: &Option<NodeHandle>,
-    //                 clip_name: &String)
-    //                 -> Option<ClipHandle> {
-
-    //    // TODO return correct input
-    //    None
-    // }
-
-    pub fn load_project(file_name: PathBuf) -> Project {
-        // Read a file and re-construct a Project
-        // Open file
+    /// Read a project file and returns a Project object
+    pub fn project_load(file_name: PathBuf) -> Project {
         match File::open(file_name) {
             Ok(mut file) => {
                 let project = Project::new();
@@ -127,47 +95,88 @@ impl Project {
         }
     }
 
-
-    // TODO: graph and node connection
-    pub fn node_connect(&mut self,
-                        in_node: &Option<NodeHandle>,
-                        out_node: &Option<NodeHandle>,
-                        out_clip: &Option<ClipHandle>) {
-        // TODO check connection validity
-        match (in_node, out_node, out_clip) {
-            (&Some(ref node_in), &Some(ref node_out), &Some(ref clip_out)) => {
-                println!("test");
-                self.connections
-                    .entry(node_in.clone())
-                    .or_insert(Vec::new())
-                    .push((node_out.clone(), clip_out.clone()));
-            }
-            _ => println!("bb"), // TODO panic or warn ????
+    /// Returns the node input, it might not be connected
+    /// node_id must belong to the project
+    pub fn node_input(&self,
+                      node_id: &NodeHandle,
+                      clip_name: &ClipHandle)
+                      -> Option<&OfxImageClip> {
+        if let Some(ref node) = self.node_get(node_id) {
+            node.clip_get(clip_name)
+        } else {
+            None
         }
     }
 
+    pub fn node_output(&self, node: &NodeHandle) -> Option<ClipHandle> {
+        Some(ClipHandle::new("Output").unwrap()) // FIXME
+    }
 
-    // TODO:
-    // pub fn save_project(project: Project) {
-    // }
+    // TODO: graph and node connection
+    // Connect should return an error if the nodes are 
+    // incompatible or can't be connected because of cycles
+    pub fn node_connect(&mut self,
+                        in_handle: &NodeHandle,
+                        out_handle: &NodeHandle,
+                        clip_in: &ClipHandle) {
+        // TODO test for non-existant nodes and clip
+        // TODO check already made connection
+        // Get nodes
+        // TODO : node_exists() instead of node_get
+        if let Some(_node_in) = self.node_get(in_handle) {
+        } else {
+            error!("unable to find node {}", in_handle);
+            return;
+        }
+        if let Some(_node_out) = self.node_get(out_handle) {
+        } else {
+            error!("unable to find node {}", out_handle);
+            return;
+        }
+        self.wires.insert(out_handle.clone(), (in_handle.clone(), clip_in.clone()));
+        // TODO check for cycle
+    }
+
+    // TODO: render a clip
+    pub fn render(&mut self, node_handle: &NodeHandle) {
+        // Render node if node is an output node
+        let node = self.node_get_mut(node_handle).unwrap();
+
+        // Go down to sources and get source image size
+        //let ref incoming = node.incoming;
+        //for n in incoming {
+        //    println!("incoming {:?}", n);
+        //}
+    }
 }
 
-
 #[test]
-fn test_next_id() {
-    let mut id1 = "Gain.1".to_string();
-    id1 = next_id(&mut id1);
-    assert!(id1 == "Gain.2".to_string());
+fn test_new_project() {
+    let mut project = Project::new();
+    assert_eq!(project.node_len(), 0);
 
-    let mut id2 = "Gain".to_string();
-    id2 = next_id(&mut id2);
-    assert!(id2 == "Gain.1".to_string());
+    let node1 = project.node_new("no_plugin");
+    project.node_insert("Test".to_string(), node1);
+    let node2 = project.node_new("no_plugin");
+    project.node_insert("Test".to_string(), node2);
 
-    let mut id3 = "".to_string();
-    id3 = next_id(&mut id3);
-    assert!(id3 == ".1".to_string());
+    assert_eq!(project.node_len(), 2);
+}
 
-    let mut id4 = "Gain.toto".to_string();
-    id4 = next_id(&mut id4);
-    assert!(id4 == "Gain.toto.1".to_string());
+// TODO: test connections failures
+#[test]
+fn test_connection() {
+    let mut project = Project::new();
+    assert_eq!(project.node_len(), 0);
+
+    let node1 = project.node_new("dummy_plugin");
+    let node1_handle = project.node_insert("Test".to_string(), node1);
+    let node2 = project.node_new("dummy_plugin");
+    let node2_handle = project.node_insert("Test".to_string(), node2);
+    assert_eq!(project.node_len(), 2);
+
+    let clip_handle = ClipHandle::new("Source").unwrap();
+    project.node_connect(&node1_handle, &node2_handle, &clip_handle);
+    
+    // TODO: test connection
 }

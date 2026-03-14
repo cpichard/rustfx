@@ -6,8 +6,10 @@ links = "ofxc"
 build = "build.rs"
 
 [profile.dev]
+debug = true
+
+[profile.release]
 panic = 'abort'
-debug = true 
 
 [dependencies]
 libc = "*"

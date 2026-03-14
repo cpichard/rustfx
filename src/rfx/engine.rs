@@ -152,7 +152,7 @@ impl Engine {
         properties.insert(kOfxImageEffectHostPropIsBackground, 0, 1);
         properties.insert(kOfxImageEffectInstancePropSequentialRender, 0, 0);
         properties.insert(kOfxImageEffectPropContext, 0, kOfxImageEffectContextGeneral);
-        properties.insert(kOfxImageEffectPropMultipleClipDepths, 0, 0);
+        properties.insert(kOfxImageEffectPropSupportsMultipleClipDepths, 0, 0);
         properties.insert(kOfxImageEffectPropSetableFielding, 0, 0);
         properties.insert(kOfxImageEffectPropSetableFrameRate, 0, 0);
         properties.insert(kOfxImageEffectPropSupportedComponents,

@@ -1,5 +1,5 @@
 extern crate libc;
-use libc::*;
+use libc::{c_void, c_char, c_int};
 use suites::property::*;
 use rfx::propertyset::*;
 use suites::imageeffect::*;

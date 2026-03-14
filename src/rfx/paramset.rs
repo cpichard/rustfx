@@ -1,5 +1,5 @@
 extern crate libc;
-use libc::*;
+use libc::{c_void, c_char};
 use suites::core::*;
 use std::ffi::*;
 use std::mem::*;
